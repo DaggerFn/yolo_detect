@@ -214,39 +214,69 @@ def get_tracking_info():
        print(f"Erro: {e}")
 
 '''
+
 qtdMotrs = 0  # Inicializa a quantidade de motores
 previous_value = 0  # Valor anterior de roi_object_count
 no_detection_time = 0  # Inicializa o tempo sem detecções
 last_update_time = None
 last_update_date = None
+time_for_save = None
+tempo_decorrido = "00:00:00.000"  # Inicialização com tempo zero
 
+# Converter hora no formato string para milissegundos desde meia-noite
+def time_str_to_milliseconds(time_str):
+    time_obj = datetime.strptime(time_str, "%H:%M:%S.%f")
+    milliseconds = (time_obj.hour * 3600 + time_obj.minute * 60 + time_obj.second) * 1000 + time_obj.microsecond // 1000
+    return milliseconds
+
+# Converter milissegundos de volta para string no formato HH:MM:SS.mmm
+def milliseconds_to_time_str(milliseconds):
+    hours = milliseconds // (3600 * 1000)
+    milliseconds %= (3600 * 1000)
+    minutes = milliseconds // (60 * 1000)
+    milliseconds %= (60 * 1000)
+    seconds = milliseconds // 1000
+    milliseconds %= 1000
+
+    return f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
 
 def get_tracking_info():
-    #Retornar as informações de rastreamento para geração de JSON.
-    global qtdMotrs, previous_value, roi_object_count, last_update_time, last_update_date  # Certifique-se de que essas variáveis são globais
+    global qtdMotrs, previous_value, roi_object_count, last_update_time, last_update_date, time_for_save, tempo_decorrido
 
     try:
         with lock:
             # Verifica se o valor mudou de 0 para 1
             if roi_object_count == 1 and previous_value == 0:
                 qtdMotrs += 1  # Incrementa apenas uma vez
-               
-                # Atualiza a hora somente quando há incremento
+
+                # Atualiza a hora e data somente quando há incremento
                 now = datetime.now()
-                last_update_time = now.strftime("%H:%M:%S.%f")  # Atualiza a hora
-                time_for_save = now.strftime("%H:%M:%S.%f")  # Atualiza a hora
-                last_update_date = now.strftime("%d/%m/%Y")  # Atualiza a hora
+                last_update_time = now.strftime("%H:%M:%S.%f")
+                
+                # Se houve incremento, calcula o tempo decorrido
+                if time_for_save is not None:
+                    previous_time_ms = time_str_to_milliseconds(time_for_save)
+                    current_time_ms = time_str_to_milliseconds(last_update_time)
+                    calcule_time_ms = current_time_ms - previous_time_ms
+
+                    # Congela o valor do tempo decorrido até o próximo incremento
+                    tempo_decorrido = milliseconds_to_time_str(calcule_time_ms)
+                
+                # Atualiza o tempo de salvamento para o próximo cálculo
+                time_for_save = last_update_time
+                last_update_date = now.strftime("%d/%m/%Y")
 
             # Atualiza o valor anterior
-            previous_value = roi_object_count 
-           
+            previous_value = roi_object_count
+
             # Retorna as informações de rastreamento
             posto1 = {
                 'QtdMotor': qtdMotrs,
                 'hora': last_update_time,
-                'data': last_update_date, # Mantém a hora atualizada apenas quando houve incremento
-                   #'no_detection_time': no_detection_time,
+                'data': last_update_date,
+                'tempo_decorrido': tempo_decorrido  # Mantém o último valor congelado até novo incremento
             }
+
             return posto1
 
     except Exception as e:
