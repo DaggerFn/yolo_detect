@@ -4,6 +4,8 @@ import time
 from ultralytics import YOLO
 from threading import Lock
 from datetime import datetime
+import pymongo
+import requests
 
 # Configurações                     -           +
 ROI_POINTS = np.array([[960, 220], [1120, 210], [1143, 360], [995, 380]], dtype=np.int32)
@@ -28,6 +30,14 @@ no_detection_time = 0
 roi_object_count = 0
 lock = Lock()
 
+
+# Conectar ao MongoDB
+client = pymongo.MongoClient("mongodb://localhost:27017/")
+db = client["meu_banco"]
+collection = db["motores"]
+
+# URL da API onde o JSON é fornecido
+url = "http://10.1.30.105:5000/tracking_info"  # Substitua pelo URL correto
  
 
 def load_yolo_model(model_path):
@@ -224,6 +234,7 @@ def get_tracking_info():
                 # Atualiza a hora somente quando há incremento
                 now = datetime.now()
                 last_update_time = now.strftime("%H:%M:%S.%f")  # Atualiza a hora
+                time_for_save = now.strftime("%H:%M:%S.%f")  # Atualiza a hora
                 last_update_date = now.strftime("%d/%m/%Y")  # Atualiza a hora
 
             # Atualiza o valor anterior
@@ -234,7 +245,7 @@ def get_tracking_info():
                 'QtdMotor': qtdMotrs,
                 'hora': last_update_time,
                 'data': last_update_date, # Mantém a hora atualizada apenas quando houve incremento
-                    #'no_detection_time': no_detection_time,
+                   #'no_detection_time': no_detection_time,
             }
             return posto1
 
@@ -245,3 +256,34 @@ def get_tracking_info():
             'no_detection_time': 0,
             'roi_object_count': 0  # Retornar 0 se houver erro
         }
+
+
+def consumir_json():
+   """Função que consome os dados JSON da API"""
+   try:
+       response = requests.get(url)
+       # Verificar se a resposta é válida
+       if response.status_code == 200:
+           return response.json()  # Tentativa de decodificar o JSON
+       else:
+           print(f"Erro na resposta da API. Status Code: {response.status_code}")
+           return None
+   except requests.exceptions.RequestException as e:
+       print(f"Erro ao fazer a requisição: {e}")
+       return None
+   except ValueError as e:
+       print(f"Erro ao decodificar o JSON: {e}")
+       return None
+
+def inserir_no_mongo(dados):
+   """Função que insere os dados no MongoDB se forem diferentes"""
+   try:
+       # Verifica se o JSON já existe no banco de dados
+       if not collection.find_one(dados):
+           collection.insert_one(dados)
+           print("Novos dados inseridos no MongoDB")
+       else:
+           print("Dados já existem no banco de dados, não inseridos.")
+   except Exception as e:
+       print(f"Erro ao inserir no MongoDB: {e}")
+
