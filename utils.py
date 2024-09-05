@@ -222,6 +222,7 @@ last_update_time = None
 last_update_date = None
 time_for_save = None
 tempo_decorrido = "00:00:00.000"  # Inicialização com tempo zero
+tempo_planejado = "00:00:43.000"
 
 # Converter hora no formato string para milissegundos desde meia-noite
 def time_str_to_milliseconds(time_str):
@@ -274,7 +275,8 @@ def get_tracking_info():
                 'QtdMotor': qtdMotrs,
                 'hora': last_update_time,
                 'data': last_update_date,
-                'tempo_decorrido': tempo_decorrido  # Mantém o último valor congelado até novo incremento
+                'tempo_decorrido': tempo_decorrido,     #Mantém o último valor congelado até novo incremento
+                'tempo_planejado': tempo_planejado
             }
 
             return posto1
