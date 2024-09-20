@@ -1,0 +1,9 @@
+*.txt
+*.pt
+*.jpg
+**/__pycache__/
+8vn_tuned_ncnn_model/
+8vn_tuned_openvino_model/
+full_data_v10M_openvino_model/
+pt/
+sql/
