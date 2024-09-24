@@ -41,6 +41,12 @@ lock = Lock()
 url = "http://10.1.30.105:5000/tracking_info"  # Substitua pelo URL correto
  
 
+"""
+________________________________________________________________________________________________________
+Processamento de Video
+________________________________________________________________________________________________________
+"""
+
 def load_yolo_model(model_path):
    """Carregar o modelo YOLO a partir do caminho especificado."""
    return YOLO(model_path)
@@ -88,42 +94,6 @@ def is_object_in_roi(object_bbox, roi_points):
            return True
    return False
 
-def track_objects(frame, model):
-   """Rastrear objetos e contabilizar o tempo em e fora da ROI."""
-   global no_detection_time, roi_object_count, last_detection_time  # Adicione last_detection_time aqui
-
-   current_time = time.time()
-   frame, detections = process_frame(frame, model)
-
-   roi_count = 0  # Contador de objetos na ROI
-
-   with lock:
-       for detection in detections:
-           try:
-               if len(detection) >= 4:  # Verifica se a detecção contém pelo menos 4 valores
-                   xmin, ymin, xmax, ymax = detection[:4]
-
-                   if is_object_in_roi([xmin, ymin, xmax, ymax], ROI_POINTS):
-                       roi_count += 1  # Incrementar o contador de objetos na ROI
-
-           except Exception as e:
-               print(f"Erro ao processar detecção: {e}")
-
-       # Se houver detecções, resetar o tempo sem detecções
-       if roi_count > 0:
-           no_detection_time = 0
-       else:
-           no_detection_time += current_time - last_detection_time  # Agora last_detection_time está acessível
-
-       last_detection_time = current_time
-       roi_object_count = roi_count  # Atualizar a contagem de objetos na ROI
-
-   return {
-       'object_times': {},  # Retornar um dicionário vazio
-       'no_detection_time': no_detection_time,
-       'roi_object_count': roi_object_count  # Retornar a contagem de objetos na ROI
-   }
-
 def generate_frames(model, camera_url):
    """Gerar frames para transmissão via HTTP e contabilizar o tempo de objetos na ROI."""
    cap = cv2.VideoCapture(camera_url)
@@ -146,75 +116,12 @@ def generate_frames(model, camera_url):
        yield (b'--frame\r\n'
               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
-'''
-def get_tracking_info():
-   """Retornar as informações de rastreamento para geração de JSON."""
-   try:
-       with lock:
-           return {
-               'object_times': {},  # Retornar um dicionário vazio
-               'no_detection_time': no_detection_time,
-               'roi_object_count': roi_object_count  # Adicionar contagem de objetos na ROI
-           }
-   except Exception as e:
-       print(f"Erro ao obter informações de rastreamento: {e}")
-       return {
-           'object_times': {},
-           'no_detection_time': 0,
-           'roi_object_count': 0  # Retornar 0 se houver erro
-       }
-
-
-qtdMotrs = 0
-previous_value = 0
-last_update_time = None
-last_update_date = None
-roi_object_count = 0  # Defina um valor inicial para testar
-last_update_time_dict = {}  # Dicionário para armazenar os tempos de atualização
-
-def get_tracking_info():
-   global qtdMotrs, previous_value, roi_object_count, last_update_time, last_update_date
-
-   try:
-       with lock:
-           now = datetime.now()
-           time_oe = "00:00"  # Formato padrão para tempo
-
-           # Verifica se houve mudança na quantidade de motores
-           if roi_object_count != previous_value:
-               # Se houve incremento em qtdMotrs
-               if roi_object_count > previous_value:
-                   qtdMotrs += 1
-               else:
-                   qtdMotrs -= 1
-               
-               # Atualiza o last_update_time e last_update_date
-               last_update_time = now
-               last_update_date = now.strftime("%d/%m/%Y")
-               
-               # Calcula time_oe se a quantidade de motores já foi registrada antes
-               if previous_value in last_update_time_dict:
-                   delta = (now - last_update_time_dict[previous_value]).total_seconds()
-                   time_oe = str(datetime.utcfromtimestamp(delta).strftime("%H:%M:%S"))
-
-               # Atualiza o dicionário com o tempo de atualização
-               last_update_time_dict[qtdMotrs] = now
-
-           # Atualiza o valor anterior
-           previous_value = roi_object_count
-           
-           # Retorna as informações de rastreamento
-           posto1 = {
-               'QtdMotor': qtdMotrs,
-               'hora': last_update_time.strftime("%H:%M:%S.%f") if last_update_time else None,
-               'data': last_update_date,
-               'time_oe': time_oe
-           }
-           return posto1
-   except Exception as e:
-       print(f"Erro: {e}")
-
-'''
+    
+"""
+________________________________________________________________________________________________________
+Geração de Dados
+________________________________________________________________________________________________________
+"""
 
 qtdMotrs = 0  # Inicializa a quantidade de motores
 previous_value = 0  # Valor anterior de roi_object_count
@@ -224,6 +131,7 @@ last_update_date = None
 time_for_save = None
 tempo_decorrido = "00:00:00.000"  # Inicialização com tempo zero
 tempo_planejado = "00:00:43.000"
+
 
 # Converter hora no formato string para milissegundos desde meia-noite
 def time_str_to_milliseconds(time_str):
