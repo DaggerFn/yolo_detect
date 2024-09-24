@@ -4,11 +4,17 @@ import time
 from ultralytics import YOLO
 from threading import Lock
 from datetime import datetime
-import pymongo
-import requests
+
 
 # Configurações                     -           +
-ROI_POINTS = np.array([[960, 220], [1120, 210], [1143, 360], [995, 380]], dtype=np.int32)
+# Zona para camera apontada para posto 1
+#ROI_POINTS = np.array([[960, 220], [1120, 210], [1143, 360], [995, 380]], dtype=np.int32)
+
+# Zona para camera apontada para posto 2
+#ROI_POINTS = np.array([[0, 0], [1280, 0], [1280, 720], [0, 720]], dtype=np.int32)
+#ROI_POINTS = np.array([[260, 220], [200, 210], [200, 360], [200, 380]], dtype=np.int32)
+ROI_POINTS = np.array([[65, 590], [210, 590], [210, 720], [45, 720]], dtype=np.int32)
+
 ROI_COLOR = (0, 0, 255)  # Cor da borda da ROI
 OBJECT_TIMEOUT = 2  # Tempo de timeout para objetos em segundos
 
@@ -16,6 +22,7 @@ OBJECT_TIMEOUT = 2  # Tempo de timeout para objetos em segundos
  [100, 100]
    ->   |
 '''
+
 '''
 Coordenadas atuais:
 Ponto Vermelho (superior esquerdo): [0, 0]
@@ -29,12 +36,6 @@ last_detection_time = time.time()
 no_detection_time = 0
 roi_object_count = 0
 lock = Lock()
-
-
-# Conectar ao MongoDB
-client = pymongo.MongoClient("mongodb://localhost:27017/")
-db = client["meu_banco"]
-collection = db["motores"]
 
 # URL da API onde o JSON é fornecido
 url = "http://10.1.30.105:5000/tracking_info"  # Substitua pelo URL correto
@@ -145,108 +146,70 @@ def generate_frames(model, camera_url):
        yield (b'--frame\r\n'
               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
-'''
-def get_tracking_info():
-   """Retornar as informações de rastreamento para geração de JSON."""
-   try:
-       with lock:
-           return {
-               'object_times': {},  # Retornar um dicionário vazio
-               'no_detection_time': no_detection_time,
-               'roi_object_count': roi_object_count  # Adicionar contagem de objetos na ROI
-           }
-   except Exception as e:
-       print(f"Erro ao obter informações de rastreamento: {e}")
-       return {
-           'object_times': {},
-           'no_detection_time': 0,
-           'roi_object_count': 0  # Retornar 0 se houver erro
-       }
-
-
-qtdMotrs = 0
-previous_value = 0
-last_update_time = None
-last_update_date = None
-roi_object_count = 0  # Defina um valor inicial para testar
-last_update_time_dict = {}  # Dicionário para armazenar os tempos de atualização
-
-def get_tracking_info():
-   global qtdMotrs, previous_value, roi_object_count, last_update_time, last_update_date
-
-   try:
-       with lock:
-           now = datetime.now()
-           time_oe = "00:00"  # Formato padrão para tempo
-
-           # Verifica se houve mudança na quantidade de motores
-           if roi_object_count != previous_value:
-               # Se houve incremento em qtdMotrs
-               if roi_object_count > previous_value:
-                   qtdMotrs += 1
-               else:
-                   qtdMotrs -= 1
-               
-               # Atualiza o last_update_time e last_update_date
-               last_update_time = now
-               last_update_date = now.strftime("%d/%m/%Y")
-               
-               # Calcula time_oe se a quantidade de motores já foi registrada antes
-               if previous_value in last_update_time_dict:
-                   delta = (now - last_update_time_dict[previous_value]).total_seconds()
-                   time_oe = str(datetime.utcfromtimestamp(delta).strftime("%H:%M:%S"))
-
-               # Atualiza o dicionário com o tempo de atualização
-               last_update_time_dict[qtdMotrs] = now
-
-           # Atualiza o valor anterior
-           previous_value = roi_object_count
-           
-           # Retorna as informações de rastreamento
-           posto1 = {
-               'QtdMotor': qtdMotrs,
-               'hora': last_update_time.strftime("%H:%M:%S.%f") if last_update_time else None,
-               'data': last_update_date,
-               'time_oe': time_oe
-           }
-           return posto1
-   except Exception as e:
-       print(f"Erro: {e}")
-
-'''
 qtdMotrs = 0  # Inicializa a quantidade de motores
 previous_value = 0  # Valor anterior de roi_object_count
 no_detection_time = 0  # Inicializa o tempo sem detecções
 last_update_time = None
 last_update_date = None
+time_for_save = None
+tempo_decorrido = "00:00:00.000"  # Inicialização com tempo zero
+tempo_planejado = "00:00:43.000"
 
+# Converter hora no formato string para milissegundos desde meia-noite
+def time_str_to_milliseconds(time_str):
+    time_obj = datetime.strptime(time_str, "%H:%M:%S.%f")
+    milliseconds = (time_obj.hour * 3600 + time_obj.minute * 60 + time_obj.second) * 1000 + time_obj.microsecond // 1000
+    return milliseconds
+
+# Converter milissegundos de volta para string no formato HH:MM:SS.mmm
+def milliseconds_to_time_str(milliseconds):
+    hours = milliseconds // (3600 * 1000)
+    milliseconds %= (3600 * 1000)
+    minutes = milliseconds // (60 * 1000)
+    milliseconds %= (60 * 1000)
+    seconds = milliseconds // 1000
+    milliseconds %= 1000
+
+    return f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
 
 def get_tracking_info():
-    #Retornar as informações de rastreamento para geração de JSON.
-    global qtdMotrs, previous_value, roi_object_count, last_update_time, last_update_date  # Certifique-se de que essas variáveis são globais
+    global qtdMotrs, previous_value, roi_object_count, last_update_time, last_update_date, time_for_save, tempo_decorrido
 
     try:
         with lock:
             # Verifica se o valor mudou de 0 para 1
             if roi_object_count == 1 and previous_value == 0:
                 qtdMotrs += 1  # Incrementa apenas uma vez
-               
-                # Atualiza a hora somente quando há incremento
+
+                # Atualiza a hora e data somente quando há incremento
                 now = datetime.now()
-                last_update_time = now.strftime("%H:%M:%S.%f")  # Atualiza a hora
-                time_for_save = now.strftime("%H:%M:%S.%f")  # Atualiza a hora
-                last_update_date = now.strftime("%d/%m/%Y")  # Atualiza a hora
+                last_update_time = now.strftime("%H:%M:%S.%f")
+                
+                # Se houve incremento, calcula o tempo decorrido
+                if time_for_save is not None:
+                    previous_time_ms = time_str_to_milliseconds(time_for_save)
+                    current_time_ms = time_str_to_milliseconds(last_update_time)
+                    calcule_time_ms = current_time_ms - previous_time_ms
+
+                    # Congela o valor do tempo decorrido até o próximo incremento
+                    tempo_decorrido = milliseconds_to_time_str(calcule_time_ms)
+                
+                # Atualiza o tempo de salvamento para o próximo cálculo
+                time_for_save = last_update_time
+                last_update_date = now.strftime("%d/%m/%Y")
 
             # Atualiza o valor anterior
-            previous_value = roi_object_count 
-           
+            previous_value = roi_object_count
+
             # Retorna as informações de rastreamento
             posto1 = {
                 'QtdMotor': qtdMotrs,
                 'hora': last_update_time,
-                'data': last_update_date, # Mantém a hora atualizada apenas quando houve incremento
-                   #'no_detection_time': no_detection_time,
+                'data': last_update_date,
+                'tempo_decorrido': tempo_decorrido,
+                'tempo_planejado': tempo_planejado
             }
+
             return posto1
 
     except Exception as e:
@@ -256,34 +219,3 @@ def get_tracking_info():
             'no_detection_time': 0,
             'roi_object_count': 0  # Retornar 0 se houver erro
         }
-
-
-def consumir_json():
-   """Função que consome os dados JSON da API"""
-   try:
-       response = requests.get(url)
-       # Verificar se a resposta é válida
-       if response.status_code == 200:
-           return response.json()  # Tentativa de decodificar o JSON
-       else:
-           print(f"Erro na resposta da API. Status Code: {response.status_code}")
-           return None
-   except requests.exceptions.RequestException as e:
-       print(f"Erro ao fazer a requisição: {e}")
-       return None
-   except ValueError as e:
-       print(f"Erro ao decodificar o JSON: {e}")
-       return None
-
-def inserir_no_mongo(dados):
-   """Função que insere os dados no MongoDB se forem diferentes"""
-   try:
-       # Verifica se o JSON já existe no banco de dados
-       if not collection.find_one(dados):
-           collection.insert_one(dados)
-           print("Novos dados inseridos no MongoDB")
-       else:
-           print("Dados já existem no banco de dados, não inseridos.")
-   except Exception as e:
-       print(f"Erro ao inserir no MongoDB: {e}")
-
