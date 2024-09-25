@@ -1,4 +1,4 @@
-from flask import Flask, Response, jsonify
+from flask import Flask, render_template, Response, jsonify
 from video_utils import load_yolo_model, generate_frames
 from data_utils import get_tracking_info
 import cv2
@@ -24,6 +24,11 @@ def tracking_info():
     # Agora passamos o frame e o modelo para a função de tracking
     tracking_data = get_tracking_info(frame, model)
     return jsonify(tracking_data)
+
+@app.route('/tracking')
+def tracking():
+  """Rota do Flask para servir a página de tracking info."""
+  return render_template('tracking.html')
 
 @app.route('/video_feed')
 def video_feed():   

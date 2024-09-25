@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tracking Info</title>
+    <script>
+        function fetchTrackingInfo() {
+            fetch('/tracking_info')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('tracking-info').textContent = JSON.stringify(data, null, 2);
+                })
+                .catch(error => console.error('Error fetching tracking info:', error));
+        }
+
+        // Atualizar a cada 2 segundos
+        setInterval(fetchTrackingInfo, 2000);
+
+        // Fetch inicialmente
+        window.onload = fetchTrackingInfo;
+    </script>
+</head>
+<body>
+    <h1>Tracking Info</h1>
+    <pre id="tracking-info">Carregando...</pre>
+</body>
+</html>
