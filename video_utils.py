@@ -9,6 +9,8 @@ ROI_POINTS = np.array([[65, 620], [210, 620], [210, 720], [45, 720]], dtype=np.i
 ROI_COLOR = (0, 0, 255)  # Cor da borda da ROI
 lock = Lock()
 
+motorSensor = 0  
+
 def load_yolo_model(model_path):
     """Carregar o modelo YOLO a partir do caminho especificado."""
     return YOLO(model_path)
@@ -57,12 +59,12 @@ def is_object_in_roi(object_bbox, roi_points):
 
 def track_objects(frame, model):
     #Rastrear objetos e verificar se há um objeto na ROI.
+    global  motorSensor #Atualiza a variavel para escopo global
     
     # Processa o frame para obter as detecções
     frame, detections = process_frame(frame, model)
 
     # Inicializa o motorSensor como 0 (nenhum objeto)
-    motorSensor = 0  
 
     for detection in detections:
         try:
@@ -73,15 +75,22 @@ def track_objects(frame, model):
                 if is_object_in_roi([xmin, ymin, xmax, ymax], ROI_POINTS):
                     motorSensor = 1  # Define motorSensor como 1 se houver pelo menos um objeto
                     break  # Sai do loop já que encontramos um objeto na ROI
+                else:#Se nao tiver objeto na roi altera para zero 
+                    motorSensor -= 1
+                    break
+            else:#Se nao tiver objeto na roi altera para zero 
+                motorSensor -= 1
+                break
         except Exception as e:
             print(f"Erro ao processar detecção: {e}")
-            
-    # Retorna 1 se houver pelo menos um objeto na ROI, caso contrário, retorna 0
-    return motorSensor
 
-def get_motor_sensor_value(frame, model):
+
+def get_motor_sensor_value():
     """Função para obter o valor do motorSensor chamando track_objects."""
-    return track_objects(frame, model)
+    
+    global motorSensor
+    
+    return  motorSensor
 
 def generate_frames(model, camera_url):
     """Gerar frames para transmissão via HTTP e contabilizar o tempo de objetos na ROI."""

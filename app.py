@@ -17,12 +17,7 @@ cap = cv2.VideoCapture(camera_url)
 @app.route('/tracking_info')
 def tracking_info():
     """Rota para fornecer informações de rastreamento."""
-    success, frame = cap.read()  # Captura o frame da câmera
-    if not success:
-        return jsonify({'erro': 'Erro ao capturar frame'})
-
-    # Agora passamos o frame e o modelo para a função de tracking
-    tracking_data = get_tracking_info(frame, model)
+    tracking_data = get_tracking_info()
     return jsonify(tracking_data)
 
 @app.route('/tracking')
@@ -35,13 +30,6 @@ def video_feed():
     """Rota para fornecer o feed de vídeo com as detecções e ROI."""
     return Response(generate_frames(model, camera_url),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
-""" 
-@app.route('/tracking_info')
-def tracking_info():
-    #Rota para fornecer informações de rastreamento, como a quantidade de motores e tempo decorrido.
-    tracking_data = get_tracking_info()
-    return jsonify(tracking_data)
-"""
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
