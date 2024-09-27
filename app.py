@@ -1,6 +1,6 @@
 from flask import Flask, render_template, Response, jsonify
 from video_utils import load_yolo_model, generate_frames
-from data_utils import get_tracking_info
+from data_utils import MotorTracker
 import cv2
 
 app = Flask(__name__)
@@ -14,10 +14,12 @@ camera_url = 'http://10.1.60.155:4000/video_feed'  # Substitua pelo URL da câme
 
 cap = cv2.VideoCapture(camera_url)
 
+motor_tracker = MotorTracker()
+
 @app.route('/tracking_info')
 def tracking_info():
     """Rota para fornecer informações de rastreamento."""
-    tracking_data = get_tracking_info()
+    tracking_data = motor_tracker.get_tracking_info()
     return jsonify(tracking_data)
 
 @app.route('/tracking')
