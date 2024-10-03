@@ -15,3 +15,4 @@ while True:
     
     # Aguarde um tempo antes da próxima verificação (para simular um ciclo)
     time.sleep(1)
+

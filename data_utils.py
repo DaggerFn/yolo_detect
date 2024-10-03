@@ -1,9 +1,11 @@
 """ 
-A logica desse script nao funciona, o valor da minha variavel anterior sera mudado logo na sua segunda requisição do servidor flask.Quais sao os posiveis soluçoes ?
+A logica desse script nao funciona, o valor da minha variavel anterior sera mudado logo na sua segunda requisição do
+servidor flask.Quais sao os posiveis soluçoes ?
 
 Utilizar um serviço flask.socket ?
 
-Alterar a logica do progrma para salvar o estado da variavel idependente do numero de requisição, como o valor de sensor provem de um função sendo 0 e 1
+Alterar a logica do progrma para salvar o estado da variavel idependente do numero de requisição, como o valor de sensor
+provem de um função sendo 0 e 1
 
 Atual x Anterior x Get
 1		0		  1  - Primeira requisição logo nao havia valor anterior
