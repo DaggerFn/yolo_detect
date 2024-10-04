@@ -13,7 +13,7 @@ from datetime import datetime
 # Zona para camera apontada para posto 2
 #ROI_POINTS = np.array([[0, 0], [1280, 0], [1280, 720], [0, 720]], dtype=np.int32)
 #ROI_POINTS = np.array([[260, 220], [200, 210], [200, 360], [200, 380]], dtype=np.int32)
-ROI_POINTS = np.array([[65, 590], [210, 590], [210, 720], [45, 720]], dtype=np.int32)
+ROI_POINTS = np.array([[65, 620], [210, 620], [210, 720], [45, 720]], dtype=np.int32)
 
 ROI_COLOR = (0, 0, 255)  # Cor da borda da ROI
 OBJECT_TIMEOUT = 2  # Tempo de timeout para objetos em segundos
