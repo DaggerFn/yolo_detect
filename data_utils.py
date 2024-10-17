@@ -25,6 +25,8 @@ class MotorTracker:
         self.data = None
         self.hora = None
         self.horaAnterior = None
+        self.log = None
+        
 
     def incrementMotor(self):
         # Verifica se o valor mudou de 0 para 1 (indicando a presença de um motor)
@@ -33,9 +35,14 @@ class MotorTracker:
             self.data = datetime.now()
             self.hora = self.data.strftime('%Y-%m-%d %H:%M:%S')
 
+
+
     def get_tracking_info(self):
         # Atualiza o valor anterior antes de mudar o valor atual
-        self.sensorValueAnterior = self.sensorValue
+        if self.sensorValue != self.sensorValueAnterior:
+            self.sensorValueAnterior = self.sensorValue
+        else:
+            self.log = 'Nao houverao mudanças'
         
         # Obtém o novo valor do sensor
         self.sensorValue = get_motor_sensor_value()
@@ -52,7 +59,8 @@ class MotorTracker:
             'Sensor Anterior': self.sensorValueAnterior,
             'Quantidade de Motor': self.qtdMotor,
             'data': self.hora,
-            'hora_anterior': self.horaAnterior
+            'hora_anterior': self.horaAnterior,
+            'log': self.log 
         }
 
 # Exemplo de uso
