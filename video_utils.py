@@ -5,8 +5,11 @@ from ultralytics import YOLO
 from threading import Lock, Thread
 
 # Configurações
-ROI_POINTS = np.array([[65, 640], [250, 640], [250, 720], [45, 720]], dtype=np.int32)
+ROI_POINTS = np.array([[55, 640], [250, 640], [250, 720], [45, 720]], dtype=np.int32)
 ROI_COLOR = (0, 0, 255)  # Cor da borda da ROI
+
+#               blue            green       red          azul-marinho
+POINT_COLORS = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0)]  # Cores diferentes para os pontos
 lock = Lock()
 
 motorSensor = 0  # Variável global
@@ -30,7 +33,12 @@ def process_frame(frame, model):
 
     boxes = results.boxes
 
+    # Desenhar a ROI com polilinhas
     cv2.polylines(frame, [ROI_POINTS], isClosed=True, color=ROI_COLOR, thickness=2)
+
+    # Desenhar os pontos nas extremidades da ROI com cores diferentes
+    for i, point in enumerate(ROI_POINTS):
+        cv2.circle(frame, tuple(point), 8, POINT_COLORS[i], -1)  # Desenha círculo com cor específica
 
     dets = []
     if boxes is not None:
@@ -70,7 +78,6 @@ def track_objects(frame, model):
             if is_object_in_roi([xmin, ymin, xmax, ymax], ROI_POINTS):
                 motorSensor = 1  # Atualizar se houver objeto na ROI
                 break
-
 
 
 def get_motor_sensor_value():
