@@ -15,10 +15,12 @@ Atual x Anterior x Get
 """
 
 from video_utils import get_motor_sensor_value
+from threading import Lock
 from datetime import datetime
 
 class MotorTracker:
     def __init__(self):
+        self.lock = Lock()
         self.sensorValue = 0
         self.sensorValueAnterior = 0
         self.qtdMotor = 0
@@ -35,23 +37,24 @@ class MotorTracker:
             self.data = datetime.now()
             self.hora = self.data.strftime('%Y-%m-%d %H:%M:%S')
 
-
-
-    def get_tracking_info(self):
-        # Atualiza o valor anterior antes de mudar o valor atual
-        if self.sensorValue != self.sensorValueAnterior:
-            self.sensorValueAnterior = self.sensorValue
-        else:
-            self.log = 'Nao houverao mudanças'
-        
-        # Obtém o novo valor do sensor
+    def verificarStatus(self):
         self.sensorValue = get_motor_sensor_value()
+        
+        with self.lock:
+            if self.sensorValue == 0:
+                self.sensorValueAnterior = 1
+            else:
+                self.incrementMotor()
+                self.sensorValueAnterior = 0
+                self.log = 'Nao houverao mudanças'
 
+
+    def get_tracking_info(self):        
+
+        self.verificarStatus()
+        
         # Guarda a hora anterior
         self.horaAnterior = self.hora
-
-        # Incrementa o número de motores se necessário
-        self.incrementMotor()
 
         # Retorna as informações em formato de dicionário
         return {
