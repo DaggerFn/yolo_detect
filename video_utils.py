@@ -4,8 +4,10 @@ from ultralytics import YOLO
 from threading import Lock
 
 # Configurações
-ROI_POINTS = np.array([[65, 640], [250, 640], [250, 720], [45, 720]], dtype=np.int32)
+ROI_POINTS = np.array([[45, 620], [190, 620], [190, 720], [30, 720]], dtype=np.int32)
 ROI_COLOR = (0, 0, 255)  # Cor da borda da ROI
+
+# Nome das cores: Azul, Verde, Vermelho, ciano
 POINT_COLORS = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0)]  # Cores diferentes para os pontos
 lock = Lock()
 

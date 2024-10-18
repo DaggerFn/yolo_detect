@@ -5,7 +5,7 @@ from data_utils import MotorTracker
 app = Flask(__name__)
 
 # Carregar o modelo YOLO
-model_path = r'C:\Users\gustavonc\Documents\2-Programs\6-WSFM_Montagem\trasmisoes_linha_montagem\yolo_detect_v1\pt\8n_colab_p3_openvino_model'
+model_path = r'C:\Users\gustavonc\Documents\2-Programs\6-WSFM_Montagem\trasmisoes_linha_montagem\yolo_detect_v1\modelo_colab_full_dataset_09_10.pt'  #'C:\Users\gustavonc\Documents\2-Programs\6-WSFM_Montagem\trasmisoes_linha_montagem\yolo_detect_v1\pt\8n_colab_p3_openvino_model'
 model = load_yolo_model(model_path)
 
 # URL da câmera
