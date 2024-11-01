@@ -11,7 +11,7 @@ app = Flask(__name__)
 CORS(app)  # Adiciona CORS ao seu app    Flask
 
 # Configurações
-MODEL_PATH = 'pt/8n_colab_p3_openvino_model'
+MODEL_PATH = r'c:\Users\gustavonc\Documents\2-Programs\7-yolo_scripts\Automatic Annotation\best.pt' #'pt/8n_colab_p3_openvino_model'
 CAMERA_URL = 'http://10.1.60.155:4000/video_feed'
 
 # Carregar o modelo YOLOv10
