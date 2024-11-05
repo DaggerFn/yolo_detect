@@ -8,3 +8,4 @@ full_data_v10M_openvino_model/
 pt/
 sql/
 __pycache__/utils.cpython-312.pyc
+.hintrc
