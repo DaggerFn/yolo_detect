@@ -5,37 +5,14 @@ from ultralytics import YOLO
 from threading import Lock
 from datetime import datetime
 
-
-# Configurações                     -           +
-# Zona para camera apontada para posto 1
-#ROI_POINTS = np.array([[960, 220], [1120, 210], [1143, 360], [995, 380]], dtype=np.int32)
-
 # Zona para camera apontada para posto 2
 #ROI_POINTS = np.array([[0, 0], [1280, 0], [1280, 720], [0, 720]], dtype=np.int32)
-#ROI_POINTS = np.array([[260, 220], [200, 210], [200, 360], [200, 380]], dtype=np.int32)
+
 #Roi somente para posto 1
 ROI_POINTS = np.array([[380, 380], [600, 380], [600, 590], [380, 590]], dtype=np.int32)
 
-#Original
-#ROI_POINTS = np.array([[1165, 350], [1270, 350], [1270, 510], [1165, 510]], dtype=np.int32)
-
-#ROI_POINTS = np.array([[65, 620], [210, 620], [210, 720], [45, 720]], dtype=np.int32)
-
-ROI_COLOR = (0, 0, 255)  # Cor da borda da ROI
-OBJECT_TIMEOUT = 2  # Tempo de timeout para objetos em segundos
-
-'''
- [100, 100]
-   ->   |
-'''
-
-'''
-Coordenadas atuais:
-Ponto Vermelho (superior esquerdo): [0, 0]
-Ponto Verde (superior direito): [140, 0]
-Ponto Azul (inferior direito): [80, 720]
-Ponto Amarelo (inferior esquerdo): [0, 720]
-'''
+ROI_COLOR = (0, 0, 255) 
+OBJECT_TIMEOUT = 2
 
 # Variáveis globais
 last_detection_time = time.time()

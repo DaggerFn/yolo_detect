@@ -1,18 +1,17 @@
 import time
-from flask import Flask, render_template, Response, jsonify, send_file
+from flask import Flask, render_template, Response, jsonify
 from flask_cors import CORS
 import requests
 from threading import Thread
 from utils import load_yolo_model, generate_frames, get_tracking_info
-from database import inserir_no_postgres, conectar_postgres
+from database import inserir_no_postgres
 from download import export_to_excel
-
 
 app = Flask(__name__)
 CORS(app)
 
 # Configurações
-MODEL_PATH = "/home/guts/code/P1_final_v2.pt" #"/home/guts/code/P1_final_openvino_model"
+MODEL_PATH = "P1_final_v2.pt"
 CAMERA_URL = 'http://10.1.60.155:4000/video_feed'
 
 # Carregar o modelo YOLOv10
