@@ -21,9 +21,6 @@ roi_object_count = 0
 detected_classes = None
 lock = Lock()
 
-# URL da API onde o JSON é fornecido
-url = "http://10.1.30.105:5000/tracking_info"  # Substitua pelo URL correto
- 
 
 def load_yolo_model(model_path):
    """Carregar o modelo YOLO a partir do caminho especificado."""

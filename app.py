@@ -6,6 +6,7 @@ from threading import Thread
 from utils import load_yolo_model, generate_frames, get_tracking_info
 from database import inserir_no_postgres
 from download import export_to_excel
+import keyboard
 
 app = Flask(__name__)
 CORS(app)
@@ -16,6 +17,8 @@ CAMERA_URL = 'http://10.1.60.155:4000/video_feed'
 
 # Carregar o modelo YOLOv10
 model = load_yolo_model(MODEL_PATH)
+
+generate_frames(model,CAMERA_URL)
 
 @app.route('/video_feed')
 def video_feed():
@@ -40,7 +43,7 @@ def download_excel():
 
 def consumir_json():
     """Função que consome os dados JSON da API."""
-    url = "http://10.1.30.100:5000/tracking_info"  # Altere para o URL correto
+    url = "http://10.1.30.105:5000/tracking_info"  # Altere para o URL correto
     try:
         response = requests.get(url)
         if response.status_code == 200:
@@ -52,8 +55,7 @@ def consumir_json():
         print(f"Erro ao fazer a requisição: {e}")
         return None
 
-def main():
-    """Função principal para iniciar o servidor Flask e consumir JSON."""
+def save_json():
     ultimo_json = None
 
     while True:
@@ -70,8 +72,36 @@ def main():
         # Aguarda 1 segundo antes de verificar novamente
         time.sleep(1)
 
+def main():
+    
+    for frame in generate_frames(model, CAMERA_URL):
+        print()
+        if keyboard.is_pressed("q"):
+            print("Pressionado 'q' fim do loop")
+            break
+    
+    """ 
+    ultimo_json = None
+
+    while True:
+        novo_json = consumir_json()
+
+        # Verificar se o novo JSON é diferente do anterior
+        if novo_json is not None:
+            print("Novo JSON recebido:", novo_json)  # Adiciona esta linha para depuração
+            
+            if novo_json != ultimo_json:
+                inserir_no_postgres(novo_json)
+                ultimo_json = novo_json  # Atualiza o último JSON inserido
+
+        # Aguarda 1 segundo antes de verificar novamente
+        time.sleep(1)
+    """
+
 if __name__ == '__main__':
     # Rodar o Flask em um thread separado
     Thread(target=main).start()  # Inicia a função main em um thread separado
+    Thread(target=save_json).start()  # Inicia a função main em um thread separado
+    
     app.run(host='0.0.0.0', port=5000, threaded=True)
 
