@@ -13,7 +13,7 @@ from datetime import datetime
 # Zona para camera apontada para posto 2
 #ROI_POINTS = np.array([[0, 0], [1280, 0], [1280, 720], [0, 720]], dtype=np.int32)
 #ROI_POINTS = np.array([[260, 220], [200, 210], [200, 360], [200, 380]], dtype=np.int32)
-ROI_POINTS = np.array([[45, 620], [190, 620], [190, 720], [30, 720]], dtype=np.int32)
+ROI_POINTS = np.array([[380, 380], [600, 380], [600, 590], [380, 590]], dtype=np.int32)
 
 ROI_COLOR = (0, 0, 255)  # Cor da borda da ROI
 OBJECT_TIMEOUT = 2  # Tempo de timeout para objetos em segundos
@@ -168,6 +168,12 @@ def generate_frames(model, camera_url):
        yield (b'--frame\r\n'
               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
+""" 
+_______________________________________________________________________________________________________________________________________________________________________________________________________
+|______________________________________________________________________________________________________________________________________________________________________________________________________|
+
+"""
+
 qtdMotrs = 0  # Inicializa a quantidade de motores
 previous_value = 0  # Valor anterior de roi_object_count
 no_detection_time = 0  # Inicializa o tempo sem detecções
@@ -193,6 +199,24 @@ def milliseconds_to_time_str(milliseconds):
     milliseconds %= 1000
 
     return f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
+
+def calcular_ie(tempo_planejado, tempo_decorrido):
+    try:
+        # Converter ambos os tempos para milissegundos
+        tempo_planejado_ms = time_str_to_milliseconds(tempo_planejado)
+        tempo_decorrido_ms = time_str_to_milliseconds(tempo_decorrido)
+        
+        # Evitar divisão por zero
+        if tempo_decorrido_ms == 0:
+            return 0
+        
+        # Calcular o Índice de Eficiência
+        ie = (tempo_planejado_ms / tempo_decorrido_ms) * 100
+        return ie
+    
+    except Exception as e:
+        print(f"Erro ao calcular o Índice de Eficiência: {e}")
+        return None
 
 def get_tracking_info():
     global qtdMotrs, previous_value, roi_object_count, last_update_time, last_update_date, time_for_save, tempo_decorrido
@@ -227,7 +251,7 @@ def get_tracking_info():
 
             # Exibir os nomes das classes detectadas
             detected_class_names = [class_names[class_id] for class_id in detected_classes]
-            print("Classes detectadas:", detected_class_names)
+            #print("Classes detectadas:", detected_class_names)
             
             if detected_classes == 1:
                 tempo_planejado = "00:00:39.660"
@@ -236,6 +260,9 @@ def get_tracking_info():
             else:
                 tempo_planejado = "00:00:39.660"
             # Retorna as informações de rastreamento
+            
+            val = calcular_ie(tempo_planejado, tempo_decorrido)
+            
             posto1 = {
                 'QtdMotor': qtdMotrs,
                 'hora': last_update_time,
@@ -243,6 +270,7 @@ def get_tracking_info():
                 'tempo_decorrido': tempo_decorrido,
                 'tempo_planejado': tempo_planejado,
                 'Classe Detectada': detected_class_names,
+                'IE': val
             }
 
             return posto1
@@ -250,7 +278,4 @@ def get_tracking_info():
     except Exception as e:
         print(f"Erro ao obter informações de rastreamento: {e}")
         return {
-            'object_times': {},
-            'no_detection_time': 0,
-            'roi_object_count': 0  # Retornar 0 se houver erro
         }
