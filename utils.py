@@ -13,7 +13,13 @@ from datetime import datetime
 # Zona para camera apontada para posto 2
 #ROI_POINTS = np.array([[0, 0], [1280, 0], [1280, 720], [0, 720]], dtype=np.int32)
 #ROI_POINTS = np.array([[260, 220], [200, 210], [200, 360], [200, 380]], dtype=np.int32)
-ROI_POINTS = np.array([[65, 590], [210, 590], [210, 720], [45, 720]], dtype=np.int32)
+#Roi somente para posto 1
+ROI_POINTS = np.array([[380, 380], [600, 380], [600, 590], [380, 590]], dtype=np.int32)
+
+#Original
+#ROI_POINTS = np.array([[1165, 350], [1270, 350], [1270, 510], [1165, 510]], dtype=np.int32)
+
+#ROI_POINTS = np.array([[65, 620], [210, 620], [210, 720], [45, 720]], dtype=np.int32)
 
 ROI_COLOR = (0, 0, 255)  # Cor da borda da ROI
 OBJECT_TIMEOUT = 2  # Tempo de timeout para objetos em segundos
@@ -35,6 +41,7 @@ Ponto Amarelo (inferior esquerdo): [0, 720]
 last_detection_time = time.time()
 no_detection_time = 0
 roi_object_count = 0
+detected_classes = None
 lock = Lock()
 
 # URL da API onde o JSON é fornecido
@@ -47,6 +54,7 @@ def load_yolo_model(model_path):
 
 def process_frame(frame, model):
    """Processar o frame com a ROI e YOLO."""
+   global detected_classes
    # Criar uma máscara para a ROI
    mask = np.zeros_like(frame)
    cv2.fillConvexPoly(mask, ROI_POINTS, (255, 255, 255))
@@ -57,8 +65,11 @@ def process_frame(frame, model):
 
    # Se for uma lista, acesse o primeiro item
    if isinstance(results, list):
-       results = results[0]
+        results = results[0]
 
+   #Chama função para retorno de classe 
+   detected_classes = get_detected_classes(results)
+   
    # Obter as detecções (bounding boxes)
    boxes = results.boxes  # Isso retorna as caixas delimitadoras
 
@@ -76,6 +87,7 @@ def process_frame(frame, model):
            x1, y1, x2, y2 = map(int, box)  # Convertendo as coordenadas para inteiros
            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)  # Desenhar a caixa em verde
 
+    
    return frame, dets
 
 def is_object_in_roi(object_bbox, roi_points):
@@ -87,6 +99,22 @@ def is_object_in_roi(object_bbox, roi_points):
        if cv2.pointPolygonTest(roi_polygon, tuple(point), False) >= 0:
            return True
    return False
+
+def get_detected_classes(results):
+    """
+    Retorna as classes (labels) dos objetos detectados no frame.
+    """
+    detected_classes = []
+    
+    # Iterar sobre as detecções para obter as classes
+    for result in results:
+        if result.boxes is not None:  # Verifica se há detecções
+            for box in result.boxes:
+                class_id = int(box.cls)  # Obtém o índice da classe
+                detected_classes.append(class_id)  # Adiciona o índice à lista
+
+    return detected_classes
+
 
 def track_objects(frame, model):
    """Rastrear objetos e contabilizar o tempo em e fora da ROI."""
@@ -201,13 +229,26 @@ def get_tracking_info():
             # Atualiza o valor anterior
             previous_value = roi_object_count
 
+            class_names = ['Normal', 'W12']  # Substitua pelos nomes corretos
+
+            # Exibir os nomes das classes detectadas
+            detected_class_names = [class_names[class_id] for class_id in detected_classes]
+            print("Classes detectadas:", detected_class_names)
+            
+            if detected_classes == 1:
+                tempo_planejado = "00:00:39.660"
+            elif detected_classes == 2:
+                tempo_planejado = "00:00:50.420"
+            else:
+                tempo_planejado = "00:00:39.660"
             # Retorna as informações de rastreamento
             posto1 = {
                 'QtdMotor': qtdMotrs,
                 'hora': last_update_time,
                 'data': last_update_date,
                 'tempo_decorrido': tempo_decorrido,
-                'tempo_planejado': tempo_planejado
+                'tempo_planejado': tempo_planejado,
+                'Classe Detectada': detected_class_names
             }
 
             return posto1

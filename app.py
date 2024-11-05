@@ -1,15 +1,18 @@
 import time
-from flask import Flask, render_template, Response, jsonify
+from flask import Flask, render_template, Response, jsonify, send_file
 from flask_cors import CORS
 import requests
-from datetime import datetime
+from threading import Thread
 from utils import load_yolo_model, generate_frames, get_tracking_info
+from database import inserir_no_postgres, conectar_postgres
+from download import export_to_excel
+
 
 app = Flask(__name__)
-CORS(app)  # Adiciona CORS ao seu app Flask
+CORS(app)
 
 # Configurações
-MODEL_PATH = r'C:\Users\gustavonc\Documents\2-Programs\6-WSFM_Montagem\trasmisoes_linha_montagem\yolo_detect_v1\pt\8n_colab_p3_openvino_model'
+MODEL_PATH = "/home/guts/code/P1_final_v2.pt" #"/home/guts/code/P1_final_openvino_model"
 CAMERA_URL = 'http://10.1.60.155:4000/video_feed'
 
 # Carregar o modelo YOLOv10
@@ -32,9 +35,13 @@ def tracking():
     """Rota do Flask para servir a página de tracking info."""
     return render_template('tracking.html')
 
+@app.route('/download_excel')
+def download_excel():
+    return export_to_excel()
+
 def consumir_json():
     """Função que consome os dados JSON da API."""
-    url = "http://10.1.30.105:5000/tracking_info"  # Altere para o URL correto
+    url = "http://10.1.30.100:5000/tracking_info"  # Altere para o URL correto
     try:
         response = requests.get(url)
         if response.status_code == 200:
@@ -56,15 +63,16 @@ def main():
         # Verificar se o novo JSON é diferente do anterior
         if novo_json is not None:
             print("Novo JSON recebido:", novo_json)  # Adiciona esta linha para depuração
-
-            # Se necessário, alguma ação aqui sem banco de dados
-            ultimo_json = novo_json  # Atualiza o último JSON inserido
+            
+            if novo_json != ultimo_json:
+                inserir_no_postgres(novo_json)
+                ultimo_json = novo_json  # Atualiza o último JSON inserido
 
         # Aguarda 1 segundo antes de verificar novamente
         time.sleep(1)
 
 if __name__ == '__main__':
     # Rodar o Flask em um thread separado
-    from threading import Thread
     Thread(target=main).start()  # Inicia a função main em um thread separado
     app.run(host='0.0.0.0', port=5000, threaded=True)
+
