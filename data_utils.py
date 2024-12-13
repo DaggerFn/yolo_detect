@@ -11,7 +11,7 @@ date = 2
 # Função para atualizar data e hora
 def updateDateAndTime():
     now = datetime.now()
-    return now.strftime('%Y-%m-%d'), now.strftime('%H:%M:%S')
+    return now.strftime('%Y-%m-%d %H:%M:%S')#, now.strftime('%H:%M:%S')
 
 # Função para atualizar o status
 def updateStatus(detected_classes):
@@ -26,23 +26,21 @@ def infObjects(id, detected_classes):
 
     # Verificar se as classes 'motor' e 'hand' estão presentes
     if 'motor' in detected_classes and 'motor' in detected_classes:
-        date, time = updateDateAndTime()
+        date = updateDateAndTime()
         status = updateStatus(detected_classes)
-        percentage = f"{round((id + 1) * 10.5, 2)}%"
+        #percentage = f"{round((id + 1) * 10.5, 2)}%"
 
         # Atualizar ou criar entrada no dicionário de postos
         postos[f"Posto{id + 1}"] = {
             "Data": date,
-            "Hora": time,
             "Status": status,
-            "ID": percentage,
+        #    "ID": percentage,
         }
     else:
         postos[f"Posto{id + 1}"] = {
             "Data": None,
-            "Hora": None,
             "Status": None,
-            "ID": None,
+        #    "ID": None,
         }
         
 # Função para retornar o estado atual dos postos (JSON-like)
