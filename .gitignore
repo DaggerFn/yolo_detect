@@ -9,3 +9,5 @@ pt/
 sql/
 __pycache__/utils.cpython-312.pyc
 *test.py
+.venv/
+.vscode/
