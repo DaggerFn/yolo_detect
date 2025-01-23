@@ -1,6 +1,7 @@
 *.txt
 *.pt
 *.jpg
+*.zip
 **/__pycache__/
 8vn_tuned_ncnn_model/
 8vn_tuned_openvino_model/
