@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galeria de Imagens</title>
+    <style>
+        /* Estilos básicos */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+            background-color: #333;
+            color: #fff;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        /* Estilo da galeria */
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+        }
+
+        .image-container {
+            flex: 1 1 calc(33.333% - 20px); /* Ajusta o tamanho para 3 imagens por linha */
+            max-width: calc(33.333% - 20px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #fff;
+        }
+
+        .image-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .image-container {
+                flex: 1 1 calc(50% - 20px); /* 2 imagens por linha */
+                max-width: calc(50% - 20px);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .image-container {
+                flex: 1 1 100%; /* 1 imagem por linha */
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Galeria de Imagens</h1>
+    </header>
+    <main class="gallery">
+        <div class="image-container">
+            <img src="http://10.1.60.185:4000/video_raw0" alt="Imagem 1">
+        </div>
+        <div class="image-container">
+            <img src="http://10.1.60.185:4000/video_raw1" alt="Imagem 2">
+        </div>
+        <div class="image-container">
+            <img src="http://10.1.60.185:4000/video_raw2" alt="Imagem 3">
+        </div>
+        <div class="image-container">
+            <img src="http://10.1.60.185:4000/video_raw3" alt="Imagem 4">
+        </div>
+        <div class="image-container">
+            <img src="http://10.1.60.185:4000/video_raw4" alt="Imagem 5">
+        </div>
+        <div class="image-container">
+            <img src="http://10.1.60.185:4000/video_raw5" alt="Imagem 6">
+        </div>
+    </main>
+</body>
+</html>
+

@@ -4,7 +4,7 @@ from time import time, sleep
 from threading import Lock, Thread
 from numpy import zeros, uint8, ceil, hstack, vstack
 import numpy as np
-from flask import Flask, Response, jsonify
+from flask import Flask, Response, jsonify, render_template
 from flask_cors import CORS
 from data_utils import infObjects, updateAPI, pass_class_api, objects_counter
 from config import camera_urls, rois, roi_points_worker
@@ -332,6 +332,10 @@ def cropped_frames_feed(camera_id):
     except ValueError:
         return "Camera ID must be an integer.", 400
 """
+
+@app.route('/cam')
+def tracking():
+    return render_template('index.html')
 
 @app.route('/video_raw<camera_id>')
 def video_raw_camera_feed(camera_id):
