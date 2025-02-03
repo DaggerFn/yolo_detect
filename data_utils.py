@@ -235,7 +235,7 @@ def updateAPI():
 
 '''
 
-from processing_video import contador, classes_operation
+from processing_video import contador, operacao
 from datetime import datetime, timedelta
 
 def updateDateAndTime():

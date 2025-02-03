@@ -241,7 +241,7 @@ def count_operation(id):
     global frames_worker
     global annotated_frames_worker
     global rois
-    global classes_operation
+    global classes_operation, operacao, operacao_anterior, tempo_ultima_operacao
     
     #pt model
     model = YOLO(r'linha_11m.pt')#.to('cuda')
@@ -266,8 +266,10 @@ def count_operation(id):
                 #GPU
                 results = model.predict(frame, augment=True, visualize=False, verbose=False, conf=0.6, iou=0.1, imgsz=544)
                 
-                classes_operation[id] = [model.names[int(cls)] for cls in results[0].boxes.cls]
+                classes_operation = [model.names[int(cls)] for cls in results[0].boxes.cls]
                 annotated_frame = results[0].plot(conf=True, labels=True, line_width=1)
+                
+                tem_operacao = any('motor' and 'hand'in cls.lower() for cls in classes_operation)    
                 
                 #pass_class_api(detected_classes)
                 #rois_camera = rois[id]['points']
@@ -276,13 +278,43 @@ def count_operation(id):
                 #annotated_frame = draw_roi(id ,annotated_frame, rois_camera, detections)
                 
                 if id not in operacao:
-                    operacao[id] = {'Quantidade': 0}
-                if id not in estado_anterior:
+                    operacao[id] = {'Operação': 0}
+                if id not in operacao_anterior:
                     operacao_anterior[id] = 0
                 if id not in tempo_ultima_operacao:
                     tempo_ultima_operacao[id] = 0  
                 
+                if tem_operacao:
+                    operacao[id]['Operação'] = 1
+                else:
+                    operacao[id]['Operação'] = 0
                 
+                """
+                # Verifica se o motor apareceu e antes não estava presente
+                if tem_operacao:
+                    tempo_atual_op = time()
+                    tempo_decorrido = tempo_atual_op - tempo_ultima_operacao[id]
+
+                    # Incrementa apenas se passou o cooldown e antes não estava presente
+                    if operacao_anterior[id] == 0 and tempo_decorrido > TEMPO_DE_COOLDOWN:
+                        operacao[id]['Operação'] = 1
+                        print("###################################")
+                        #print('operacao e \n',operacao)
+                        print(f"[{id}] Operação identificada ! Status: {operacao[id]['Operação']}")
+                        
+                        # Atualiza o tempo da última operação
+                        tempo_ultima_operacao[id] = tempo_atual_op
+
+                    # Atualiza estado para indicar que está em operação
+                    operacao_anterior[id] = 1  
+
+                else:
+                    # Se nao esta em operação, atualiza o estado para 0
+                    operacao_anterior[id] = 0  
+                """
+                
+                print("###################################")
+                print('No id', id, operacao[id])
                 
                 
                 with frame_lock:

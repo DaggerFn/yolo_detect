@@ -34,7 +34,7 @@ def tracking():
 def api_update():
     return render_template('tracking.html')
 
-
+"""
 @app.route('/video<camera_id>')
 def video_camera_feed(camera_id):
     try:
@@ -57,7 +57,7 @@ def cropped_frames_feed(camera_id):
             return f"Invalid camera ID: {camera_id}", 404
     except ValueError:
         return "Camera ID must be an integer.", 400
-
+"""
 
 @app.route('/video_raw<camera_id>')
 def video_raw_camera_feed(camera_id):
