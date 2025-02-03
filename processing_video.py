@@ -6,7 +6,7 @@ from numpy import zeros, uint8
 from datetime import timedelta
 #from data_utils import infObjects, updateAPI, pass_class_api 
 from config import camera_urls, rois, roi_points_worker
-
+from data_utils import makeJson
 
 # Inicializa os frames e frames anotados globais
 global_frames = [None] * len(camera_urls)
@@ -40,6 +40,7 @@ classes_operation = {}
 
 # Tempo de cooldown em segundos
 TEMPO_DE_COOLDOWN = 2  
+ 
 
 
 def imageUpdater(id, video_path, interval):
@@ -172,6 +173,15 @@ def objects_counter(camera_id, detections):#detected_classes, detections):
                     estado_anterior[id] = True
 """
 
+
+def count_id():
+    global contador, operacao
+    
+    if len(contador) == len(operacao):
+        return True
+    else:
+        return False       
+
 def count_motor(id):
     global global_frames, global_cropped_frames, annotated_frames
     global contador, estado_anterior, tempo_ultima_detecao  
@@ -223,7 +233,11 @@ def count_motor(id):
                 else:
                     # Se o motor sumiu, atualiza o estado para 0
                     estado_anterior[id] = 0  
-
+                
+                print(count_id())
+                if count_id is True:
+                    makeJson(id, contador, operacao)
+                    
                 with frame_lock:
                     annotated_frames[id] = results[0].plot(conf=True, labels=True, line_width=1)
 
@@ -313,8 +327,8 @@ def count_operation(id):
                     operacao_anterior[id] = 0  
                 """
                 
-                print("###################################")
-                print('No id', id, operacao[id])
+                #print("###################################")
+                #print('No id', id, operacao[id])
                 
                 
                 with frame_lock:

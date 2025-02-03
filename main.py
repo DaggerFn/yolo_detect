@@ -17,12 +17,12 @@ log.setLevel(logging.ERROR)  # Ou logging.CRITICAL para menos logs
 app = Flask(__name__)
 CORS(app)
 
-"""
+
 @app.route('/api')
 def getAPI():
     info = updateAPI()
     return jsonify(info)
-"""
+
 
 @app.route('/cam')
 def tracking():
@@ -33,6 +33,7 @@ def tracking():
 @app.route('/api_update')
 def api_update():
     return render_template('tracking.html')
+
 
 """
 @app.route('/video<camera_id>')
@@ -58,6 +59,7 @@ def cropped_frames_feed(camera_id):
     except ValueError:
         return "Camera ID must be an integer.", 400
 """
+
 
 @app.route('/video_raw<camera_id>')
 def video_raw_camera_feed(camera_id):

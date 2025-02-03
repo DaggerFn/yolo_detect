@@ -235,22 +235,47 @@ def updateAPI():
 
 '''
 
-from processing_video import contador, operacao
+#from processing_video import contador, operacao
 from datetime import datetime, timedelta
+
+postos = {}
+
 
 def updateDateAndTime():
     now = datetime.now()
     return now.strftime('%Y-%m-%d %H:%M:%S')
 
-def makeJson():
-    contador, classes_operation = [id]
+def makeJson(id, contador, operacao):
+    #contador, operacao = [0]
+    global postos
     
-    print('Testando o ID ',classes_operation)
-    print('Testando o ID ',contador)
-
+    
+    #print('Testando o ID ',classes_operation)
+    #print('Testando o ID ',contador)
+    posto_id = f'Posto {id +1}'
+    
+    if posto_id not in postos:
+        
+        postos[posto_id] = {
+            "Data": updateDateAndTime(),
+            "Status": contador[id],
+            "Quantidade": operacao[id],
+        }
     
 
+def updateAPI():
+    global postos
+    return postos
 
-def updateAPI(idx):
-    
-    return makeJson()
+"""
+{
+	"Data": "2025-02-03 15:38:33",
+	"Quantidade": {
+		"Operação": 0
+	},
+	"Status": {
+		"Quantidade": 1
+	}
+}
+
+"""
