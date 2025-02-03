@@ -1,16 +1,14 @@
 import cv2
 from ultralytics import YOLO
 from time import time, sleep
-from threading import Lock, Thread
-from numpy import zeros, uint8, ceil, hstack, vstack
-import numpy as np
-from flask import Flask, Response, jsonify, render_template
-from flask_cors import CORS
-from data_utils import infObjects, updateAPI, pass_class_api, objects_counter
+from threading import Lock
+from numpy import zeros, uint8
+from datetime import timedelta
+#from data_utils import infObjects, updateAPI, pass_class_api 
 from config import camera_urls, rois, roi_points_worker
 
-app = Flask(__name__)
-CORS(app)
+
+classes_operation = {}
 
 # Inicializa os frames e frames anotados globais
 global_frames = [None] * len(camera_urls)
@@ -29,10 +27,18 @@ frames_worker = [None] * len(camera_urls)
 
 #Frame com Deteções da Area de status de Operação
 annotated_frames_worker = [None] * len(camera_urls)
-
+nao_tem_motor = None
 contador = {}
 ultimo_tempo = {}
 estado_anterior = {}
+tempo_validacao = timedelta(seconds=1)
+
+
+
+tempo_ultima_detecao = {}  # Dicionário para armazenar o tempo da última detecção
+
+# Tempo de cooldown em segundos
+TEMPO_DE_COOLDOWN = 2  
 
 
 def imageUpdater(id, video_path, interval):
@@ -49,9 +55,37 @@ def imageUpdater(id, video_path, interval):
                 with frame_lock:
                     global_frames[id] = frame
                 crop_frames_by_rois()
-                crop_frames_by_rois_worker()  
+                crop_frames_by_rois_worker()
         else:
             cap.grab()
+
+
+"""
+def draw_count_in_frame(id):
+    global global_frames
+    
+    font = cv2.FONT_HERSHEY_SIMPLEX
+
+    # Obter o contador atualizado
+    
+    contador_for_def = export_var_contador()
+
+    if len(export_var_contador()) <= 5:
+        
+        # Validar se o id existe no contador e no global_frames
+        if id not in contador_for_def:
+            print(f"ID {id} não encontrado em contador_for_def.")
+            sleep(20)
+        if id not in global_frames or global_frames[id] is None:
+            print(f"Frame inválido para o ID {id} em global_frames.")
+            sleep(20)
+
+        # Obter o valor de 'Quantidade' e converter para string
+        quantidade = str(contador_for_def[id]['Quantidade'])
+
+        # Adicionar o texto ao frame
+        return cv2.putText(global_frames[id], quantidade, (50, 50), font, 1, (0, 255, 255), 2, cv2.LINE_4)
+"""
 
 
 def crop_frames_by_rois():
@@ -108,40 +142,105 @@ def draw_roi(camera_id ,frame, rois, detections):
 """
 
 """
-def objects_counter(camera_id, detected_classes, detections):
-    global contador, estado_anterior
-
-    # Inicializa o contador e o estado anterior para a câmera, se necessário
-    if camera_id not in contador:
-        contador[camera_id] = {'Quantidade': 0}
-    if camera_id not in estado_anterior:
-        estado_anterior[camera_id] = False  # Nenhuma detecção inicialmente
-
-    # Verifica se há alguma classe "motor" nas classes detectadas
-    tem_motor = any('motor' in cls.lower() for cls in detected_classes)
-
-    # Determina o status atual de detecção (considera apenas classes "motor")
-    tem_deteccao = len(detections) > 0 and tem_motor
-
-    # Incrementa o contador apenas na transição de "sem detecção" para "com detecção"
-    if tem_deteccao and not estado_anterior[camera_id]:
-        contador[camera_id]['Quantidade'] += 1
-        #print(f"Objeto 'motor' detectado na câmera {camera_id}. Quantidade: {contador[camera_id]['Quantidade']}")
-
-    # Atualiza o estado anterior
-    estado_anterior[camera_id] = tem_deteccao
-
-    # Exibe o status atual
-    if tem_deteccao:
-        None
-        #print(f"Objeto 'motor' detectado na câmera {camera_id}. Quantidade: {contador[camera_id]['Quantidade']}")
-"""
-        
-def count_motor(id):
-    global global_frames
-    global annotated_frames
-    global rois
+def objects_counter(camera_id, detections):#detected_classes, detections):
     global contador    
+    global estado_anterior
+    global tempo_ultima_detecao 
+
+
+    if len(detections) > 0 :#and tem_motor:
+            
+            print('########################################')
+            
+            print(f"[{id}] Motor detectado!")
+
+            if estado_anterior[id] is False:
+                    
+                tempo_atual = time()
+                tempo_decorrido = tempo_atual - tempo_ultima_detecao[id]
+                    
+                if tempo_decorrido > TEMPO_DE_COOLDOWN:  # Verifica se passou o tempo de cooldown
+                    contador[id]['Quantidade'] += 1
+                    print("###################################")
+                    print(f"[{id}] Motor contado! Total: {contador[id]['Quantidade']}")
+
+                            
+                    # Atualiza o tempo da última detecção
+                    tempo_ultima_detecao[id] = tempo_atual
+                            
+                    estado_anterior[id] = True
+"""
+
+def count_motor(id):
+    global global_frames, global_cropped_frames, annotated_frames
+    global contador, estado_anterior, tempo_ultima_detecao  
+
+    #pt model
+    #model = YOLO(r'/home/sim/code/models/modelo_linha/linha_11m.pt').to('cuda')
+    
+    #OpenVino model
+    model = YOLO('/home/sim/code/models/linha_11m_openvino_model/')#.to('cpu')
+    
+    while True:
+        start = time()
+
+        try:
+            with frame_lock:
+                frame = global_cropped_frames[id]
+
+            if frame is not None:
+                results = model.predict(frame, augment=True, visualize=False, verbose=False, conf=0.7, iou=0.1, imgsz=640)
+
+                detected_classes = [model.names[int(cls)] for cls in results[0].boxes.cls]
+                tem_motor = any('motor' in cls.lower() for cls in detected_classes)    
+
+                if id not in contador:
+                    contador[id] = {'Quantidade': 0}
+                if id not in estado_anterior:
+                    estado_anterior[id] = 0
+                if id not in tempo_ultima_detecao:
+                    tempo_ultima_detecao[id] = 0  
+
+                # Verifica se o motor apareceu e antes não estava presente
+                if tem_motor:
+                    tempo_atual = time()
+                    tempo_decorrido = tempo_atual - tempo_ultima_detecao[id]
+
+                    # Incrementa apenas se passou o cooldown e antes não estava presente
+                    if estado_anterior[id] == 0 and tempo_decorrido > TEMPO_DE_COOLDOWN:
+                        contador[id]['Quantidade'] += 1
+                        #print("###################################")
+                        #print('contador e \n',contador)
+                        #print(f"[{id}] Motor contado! Total: {contador[id]['Quantidade']}")
+                        
+                        # Atualiza o tempo da última detecção
+                        tempo_ultima_detecao[id] = tempo_atual
+
+                    # Atualiza estado para indicar que o motor está presente
+                    estado_anterior[id] = 1  
+
+                else:
+                    # Se o motor sumiu, atualiza o estado para 0
+                    estado_anterior[id] = 0  
+
+                with frame_lock:
+                    annotated_frames[id] = results[0].plot(conf=True, labels=True, line_width=1)
+
+            else:
+                with frame_lock:
+                    annotated_frames[id] = zeros((320, 480, 3), dtype=uint8)  
+
+        except Exception as e:
+            print(e)
+            pass
+
+
+def count_operation(id):
+    global global_frames
+    global frames_worker
+    global annotated_frames_worker
+    global rois
+    global classes_operation
     
     #pt model
     model = YOLO(r'/home/sim/code/models/modelo_linha/linha_11m.pt').to('cuda')
@@ -152,70 +251,7 @@ def count_motor(id):
     
     while True:
         start = time()
-        try:
-            with frame_lock:
-                frame = global_cropped_frames[id]
-                #frame = global_frames[id]
-            if frame is not None:
-                annotated_frame = frame
-                
-                #OpenVino
-                #results = model.predict(frame, augment=True, task="detect", visualize=False, verbose=False, conf=0.7, iou=0.5,imgsz=640)
-                
-                #GPU
-                results = model.predict(frame, augment=True, visualize=False, verbose=False, conf=0.7, iou=0.1, imgsz=544)
-                
-                detected_classes = [model.names[int(cls)] for cls in results[0].boxes.cls]
-                annotated_frame = results[0].plot(conf=True, labels=True, line_width=1)
-                
-                rois_camera = rois[id]['points']
-                
-                detections = results[0].boxes.xyxy.cpu().numpy().tolist()
-                objects_counter(id ,detected_classes ,detections)
-                
-                #print(detected_classes)
-                #print(objects_couter(id , detections))
-                #detections = list(results[0].boxes.xyxy)
-                #boxes = annotated_frame.boxes
-                #converter_detes(boxes)
-                #in_roi = detections_in_rois(id ,detections, detected_classes, rois)
-                #print(in_roi)
-                #annotated_frame = draw_roi(id ,annotated_frame, rois_camera, detections)
-                #print(f"Câmera {id}: Classes detectadas -> {detected_classes}")
-                
-                infObjects(id)
-
-                
-                with frame_lock:
-                    annotated_frames[id] = annotated_frame
-            else:
-                with frame_lock:
-                    annotated_frames[id] = zeros((320, 480, 3), dtype=uint8)  # Adicione um frame vazio se não houver frame
-
-        except Exception as e:
-            print(e)
-            pass
-        inference_time = time() - start
-        # print(f'{inference_time=}')
-
-
-def count_operation(id):
-    global global_frames
-    global frames_worker
-    global annotated_frames_worker
-    object_counter = set() 
-    global rois
-    dets = []
-    
-    #pt model
-    #model = YOLO(r'/home/sim/code/models/modelo_linha/linha_11m.pt').to('cuda')
-    
-    #OpenVino model
-    model = YOLO('/home/sim/code/models/linha_11m_openvino_model/')#.to('cpu')
-    
-    
-    while True:
-        start = time()
+        #start = time.time()
         try:
             with frame_lock:
                 #frame = global_cropped_frames[id]
@@ -224,18 +260,20 @@ def count_operation(id):
                 annotated_frame = frame
                 
                 #OpenVino
-                results = model.predict(frame, augment=True, task="detect", visualize=False, verbose=False, conf=0.7, iou=0.5,imgsz=640)
+                #results = model.predict(frame, augment=True, task="detect", visualize=False, verbose=False, conf=0.7, iou=0.5)#,imgsz=544)
                 
                 #GPU
-                #results = model.predict(frame, augment=True, visualize=False, verbose=False, conf=0.6, iou=0.1, imgsz=544)
+                results = model.predict(frame, augment=True, visualize=False, verbose=False, conf=0.6, iou=0.1, imgsz=544)
                 
-                detected_classes = [model.names[int(cls)] for cls in results[0].boxes.cls]
+                classes_operation[id] = [model.names[int(cls)] for cls in results[0].boxes.cls]
+                
+                
                 annotated_frame = results[0].plot(conf=True, labels=True, line_width=1)
-                pass_class_api(detected_classes)
+                #pass_class_api(detected_classes)
                 rois_camera = rois[id]['points']
-                detections = results[0].boxes.xyxy.cpu().numpy().tolist()                
-                
-                #print(detected_classes)
+                #print("###################################")
+                #print([id],'Classes detectadas', classes_operation)
+                #detections = results[0].boxes.xyxy.cpu().numpy().tolist()                
                 #annotated_frame = draw_roi(id ,annotated_frame, rois_camera, detections)
                 
                 with frame_lock:
@@ -267,13 +305,21 @@ def generate_raw_camera(camera_id):
                 yield (b'--frame\r\n'
                        b'Content-Type: text/plain\r\n\r\n' + b'Aguardando o frame...\r\n')
 
-
+"""
 @app.route('/api')
 def getAPI():
     info = updateAPI()
     return jsonify(info)
 
-"""
+@app.route('/cam')
+def tracking():
+    return render_template('index.html')
+
+
+@app.route('/api_update')
+def api_update():
+    return render_template('tracking.html')
+
 def generate_camera(camera_id):
     encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 50]
 
@@ -302,8 +348,7 @@ def video_camera_feed(camera_id):
     except ValueError:
         return "Camera ID must be an integer.", 400
 
-"""
-"""
+
 def generate_cropped_frames(camera_id):
     encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 50]
 
@@ -331,11 +376,7 @@ def cropped_frames_feed(camera_id):
             return f"Invalid camera ID: {camera_id}", 404
     except ValueError:
         return "Camera ID must be an integer.", 400
-"""
 
-@app.route('/cam')
-def tracking():
-    return render_template('index.html')
 
 @app.route('/video_raw<camera_id>')
 def video_raw_camera_feed(camera_id):
@@ -368,6 +409,6 @@ if __name__ == '__main__':
         thread.start()
         threads.append(thread)
     
-
     # Inicializa o servidor Flask
     app.run(host='0.0.0.0', port=4000)
+"""
