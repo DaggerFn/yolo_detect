@@ -8,8 +8,6 @@ from datetime import timedelta
 from config import camera_urls, rois, roi_points_worker
 
 
-classes_operation = {}
-
 # Inicializa os frames e frames anotados globais
 global_frames = [None] * len(camera_urls)
 
@@ -27,15 +25,18 @@ frames_worker = [None] * len(camera_urls)
 
 #Frame com Deteções da Area de status de Operação
 annotated_frames_worker = [None] * len(camera_urls)
-nao_tem_motor = None
+
+# Para Contabilizar Quantidade de Motor
 contador = {}
-ultimo_tempo = {}
 estado_anterior = {}
-tempo_validacao = timedelta(seconds=1)
-
-
-
 tempo_ultima_detecao = {}  # Dicionário para armazenar o tempo da última detecção
+
+
+# Para contabilizar Estado da Operação
+operacao = {}
+operacao_anterior = {}
+tempo_ultima_operacao = {}  # Dicionário para armazenar o tempo da última Operação
+classes_operation = {}
 
 # Tempo de cooldown em segundos
 TEMPO_DE_COOLDOWN = 2  
@@ -179,7 +180,7 @@ def count_motor(id):
     #model = YOLO(r'/home/sim/code/models/modelo_linha/linha_11m.pt').to('cuda')
     
     #OpenVino model
-    model = YOLO('/home/sim/code/models/linha_11m_openvino_model/')#.to('cpu')
+    model = YOLO(r'linha_11m_openvino_model/')#.to('cpu')
     
     while True:
         start = time()
@@ -243,7 +244,7 @@ def count_operation(id):
     global classes_operation
     
     #pt model
-    model = YOLO(r'/home/sim/code/models/modelo_linha/linha_11m.pt').to('cuda')
+    model = YOLO(r'linha_11m.pt')#.to('cuda')
     
     #OpenVino model
     #model = YOLO('/home/sim/code/models/linha_11m_openvino_model/')#.to('cpu')
@@ -266,15 +267,23 @@ def count_operation(id):
                 results = model.predict(frame, augment=True, visualize=False, verbose=False, conf=0.6, iou=0.1, imgsz=544)
                 
                 classes_operation[id] = [model.names[int(cls)] for cls in results[0].boxes.cls]
-                
-                
                 annotated_frame = results[0].plot(conf=True, labels=True, line_width=1)
+                
                 #pass_class_api(detected_classes)
-                rois_camera = rois[id]['points']
-                #print("###################################")
+                #rois_camera = rois[id]['points']
                 #print([id],'Classes detectadas', classes_operation)
                 #detections = results[0].boxes.xyxy.cpu().numpy().tolist()                
                 #annotated_frame = draw_roi(id ,annotated_frame, rois_camera, detections)
+                
+                if id not in operacao:
+                    operacao[id] = {'Quantidade': 0}
+                if id not in estado_anterior:
+                    operacao_anterior[id] = 0
+                if id not in tempo_ultima_operacao:
+                    tempo_ultima_operacao[id] = 0  
+                
+                
+                
                 
                 with frame_lock:
                     annotated_frames_worker[id] = annotated_frame
@@ -305,20 +314,6 @@ def generate_raw_camera(camera_id):
                 yield (b'--frame\r\n'
                        b'Content-Type: text/plain\r\n\r\n' + b'Aguardando o frame...\r\n')
 
-"""
-@app.route('/api')
-def getAPI():
-    info = updateAPI()
-    return jsonify(info)
-
-@app.route('/cam')
-def tracking():
-    return render_template('index.html')
-
-
-@app.route('/api_update')
-def api_update():
-    return render_template('tracking.html')
 
 def generate_camera(camera_id):
     encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 50]
@@ -337,17 +332,6 @@ def generate_camera(camera_id):
                        b'Content-Type: text/plain\r\n\r\n' + b'Waiting for the frame...\r\n')
 
 
-@app.route('/video<camera_id>')
-def video_camera_feed(camera_id):
-    try:
-        camera_id = int(camera_id)
-        if 0 <= camera_id < len(camera_urls):
-            return Response(generate_camera(camera_id), mimetype='multipart/x-mixed-replace; boundary=frame')
-        else:
-            return f"Invalid camera ID: {camera_id}", 404
-    except ValueError:
-        return "Camera ID must be an integer.", 400
-
 
 def generate_cropped_frames(camera_id):
     encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 50]
@@ -364,51 +348,4 @@ def generate_cropped_frames(camera_id):
             else:
                 yield (b'--frame\r\n'
                        b'Content-Type: text/plain\r\n\r\n' + b'Waiting for the cropped frame...\r\n')
-        
-                
-@app.route('/cropped_frames<camera_id>')
-def cropped_frames_feed(camera_id):
-    try:
-        camera_id = int(camera_id)
-        if 0 <= camera_id < len(camera_urls):
-            return Response(generate_cropped_frames(camera_id), mimetype='multipart/x-mixed-replace; boundary=frame')
-        else:
-            return f"Invalid camera ID: {camera_id}", 404
-    except ValueError:
-        return "Camera ID must be an integer.", 400
 
-
-@app.route('/video_raw<camera_id>')
-def video_raw_camera_feed(camera_id):
-    try:
-        camera_id = int(camera_id)
-        if 0 <= camera_id < len(camera_urls):
-            return Response(generate_raw_camera(camera_id), mimetype='multipart/x-mixed-replace; boundary=frame')
-        else:
-            return f"ID da câmera inválido: {camera_id}", 404
-    except ValueError:
-        return "O ID da câmera deve ser um inteiro.", 400
-
-
-if __name__ == '__main__':
-    # Inicializa threads de atualização de frames para cada câmera
-    threads = []
-    for idx, url in enumerate(camera_urls):
-        thread = Thread(target=imageUpdater, kwargs={'id': idx, 'video_path': url, 'interval': 0.01})
-        thread.start()
-        threads.append(thread)
-    
-    # Inicializa threads de detecção para cada câmera
-    for idx in range(len(camera_urls)):
-        thread = Thread(target=count_motor, args=(idx,))
-        thread.start()
-        threads.append(thread)
-    
-    for idx in range(len(camera_urls)):
-        thread = Thread(target=count_operation, args=(idx,))
-        thread.start()
-        threads.append(thread)
-    
-    # Inicializa o servidor Flask
-    app.run(host='0.0.0.0', port=4000)
-"""

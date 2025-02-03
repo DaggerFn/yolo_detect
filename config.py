@@ -1,12 +1,19 @@
 import numpy as np
 
 camera_urls = [
-    "rtsp://admin:fabrica1@192.168.0.131:554/1/2",  # Indice 0/1
-    "rtsp://admin:fabrica1@192.168.0.132:554/1/2",  # Indice 0/2
-    "rtsp://admin:fabrica1@192.168.0.133:554/1/2",  # Indice 0/3
-    "rtsp://admin:fabrica1@192.168.0.134:554/1/2",  # Indice 0/4
-    "rtsp://admin:fabrica1@192.168.0.135:554/1/2",  # Indice 0/5
-    "rtsp://admin:fabrica1@192.168.0.136:554/1/2",  # Indice 0/6
+    #"rtsp://admin:fabrica1@192.168.0.131:554/1/2",  # Indice 0/1
+    #"rtsp://admin:fabrica1@192.168.0.132:554/1/2",  # Indice 0/2
+    #"rtsp://admin:fabrica1@192.168.0.133:554/1/2",  # Indice 0/3
+    #"rtsp://admin:fabrica1@192.168.0.134:554/1/2",  # Indice 0/4
+    #"rtsp://admin:fabrica1@192.168.0.135:554/1/2",  # Indice 0/5
+    #"rtsp://admin:fabrica1@192.168.0.136:554/1/2",  # Indice 0/6
+    "http://10.1.60.185:4000/video_raw0",
+    "http://10.1.60.185:4000/video_raw1",
+    "http://10.1.60.185:4000/video_raw2",
+    "http://10.1.60.185:4000/video_raw3",
+    "http://10.1.60.185:4000/video_raw4",
+    "http://10.1.60.185:4000/video_raw5",
+    "http://10.1.60.185:4000/video_raw6",
 ]
 
 

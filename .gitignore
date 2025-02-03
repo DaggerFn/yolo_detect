@@ -9,6 +9,7 @@
 full_data_v10M_openvino_model/
 pt/
 sql/
+linha_11m_openvino_model/
 __pycache__/utils.cpython-312.pyc
 *test.py
 .venv/
