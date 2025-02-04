@@ -7,19 +7,18 @@ camera_urls = [
     #"rtsp://admin:fabrica1@192.168.0.134:554/1/2",  # Indice 0/4
     #"rtsp://admin:fabrica1@192.168.0.135:554/1/2",  # Indice 0/5
     #"rtsp://admin:fabrica1@192.168.0.136:554/1/2",  # Indice 0/6
-    "http://10.1.60.185:4000/video_raw0",
+    #"http://10.1.60.185:4000/video_raw0",
     "http://10.1.60.185:4000/video_raw1",
     "http://10.1.60.185:4000/video_raw2",
     "http://10.1.60.185:4000/video_raw3",
     "http://10.1.60.185:4000/video_raw4",
     "http://10.1.60.185:4000/video_raw5",
-    "http://10.1.60.185:4000/video_raw6",
 ]
 
 
 rois = [
     #Posto1
-    {'points': np.array([[290, 120], [440, 120], [445, 275], [290, 275]], dtype=np.int32), 'color': (255, 0, 0)},
+    #{'points': np.array([[290, 120], [440, 120], [445, 275], [290, 275]], dtype=np.int32), 'color': (255, 0, 0)},
     
     #Posto2
     {'points': np.array([[351, 115], [480, 115], [480, 320], [351, 320]], dtype=np.int32), 'color': (255, 0, 0)},
@@ -40,7 +39,7 @@ rois = [
 
 roi_points_worker = [
     #Posto 1
-    {'point': np.array([[0, 115], [300, 115], [315, 320], [0, 320]], dtype=np.int32), 'color': (255, 0, 0)},
+    #{'point': np.array([[0, 115], [300, 115], [315, 320], [0, 320]], dtype=np.int32), 'color': (255, 0, 0)},
     
     #Posto 2
     {'point': np.array([[0, 100], [450, 100], [450, 300], [0, 300]], dtype=np.int32), 'color': (255, 0, 0)},

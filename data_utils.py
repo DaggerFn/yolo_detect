@@ -267,7 +267,7 @@ def updateAPI():
     global postos
     return postos
 
-"""
+""""
 {
 	"Data": "2025-02-03 15:38:33",
 	"Quantidade": {

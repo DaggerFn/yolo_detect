@@ -5,7 +5,7 @@
     <title>Tracking Info</title>
     <script>
         function fetchTrackingInfo() {
-            fetch('http://10.1.60.185:4000/api')
+            fetch('http://10.1.30.105:4000/api')
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('tracking-info').textContent = JSON.stringify(data, null, 2);

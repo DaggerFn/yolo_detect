@@ -9,10 +9,10 @@ from flask_cors import CORS
 from data_utils import updateAPI
 from threading import Lock
 
-"""
+
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)  # Ou logging.CRITICAL para menos logs
-"""
+
 
 app = Flask(__name__)
 CORS(app)
@@ -78,6 +78,7 @@ def video_raw_camera_feed(camera_id):
 if __name__ == '__main__':
     # Inicializa threads de atualização de frames para cada câmera
     threads = []
+    
     for idx, url in enumerate(camera_urls):
         thread = Thread(target=imageUpdater, kwargs={'id': idx, 'video_path': url, 'interval': 0.01})
         thread.start()
@@ -94,12 +95,9 @@ if __name__ == '__main__':
         thread.start()
         threads.append(thread)
     
-    try:
-        # Inicializa o servidor Flask
-        app.run(host='0.0.0.0', port=4000)
-    except KeyboardInterrupt:
-        print("Encerrando o servidor...")
-        sys.exit(0)
+    thread = Thread(target=app.run, kwargs={'host': '0.0.0.0', 'port': 4000})
+    thread.start()
+    threads.append(thread)
 
     # Inicializa o servidor Flask
-    #app.run(host='0.0.0.0', port=4000)
+    #app.run(host='127.0.0.1', port=4000)
