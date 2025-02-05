@@ -40,7 +40,10 @@ classes_operation = {}
 
 # Tempo de cooldown em segundos
 TEMPO_DE_COOLDOWN = 2  
- 
+
+
+
+tempo_ultima_detecao = {}  # Dicionário para armazenar o tempo da última detecção
 
 
 def imageUpdater(id, video_path, interval):
@@ -127,6 +130,7 @@ def crop_frames_by_rois_worker():
             else:
                 frames_worker[idx] = None
 
+
 """
 def draw_roi(camera_id ,frame, rois, detections):
     
@@ -143,44 +147,22 @@ def draw_roi(camera_id ,frame, rois, detections):
     return frame
 """
 
-"""
-def objects_counter(camera_id, detections):#detected_classes, detections):
-    global contador    
-    global estado_anterior
-    global tempo_ultima_detecao 
 
-
-    if len(detections) > 0 :#and tem_motor:
-            
-            print('########################################')
-            
-            print(f"[{id}] Motor detectado!")
-
-            if estado_anterior[id] is False:
-                    
-                tempo_atual = time()
-                tempo_decorrido = tempo_atual - tempo_ultima_detecao[id]
-                    
-                if tempo_decorrido > TEMPO_DE_COOLDOWN:  # Verifica se passou o tempo de cooldown
-                    contador[id]['Quantidade'] += 1
-                    print("###################################")
-                    print(f"[{id}] Motor contado! Total: {contador[id]['Quantidade']}")
-
-                            
-                    # Atualiza o tempo da última detecção
-                    tempo_ultima_detecao[id] = tempo_atual
-                            
-                    estado_anterior[id] = True
-"""
-
-
-def count_id():
+def varReturn():
     global contador, operacao
     
-    if len(contador) == len(operacao):
-        return True
-    else:
-        return False       
+    return contador, operacao
+    
+
+def logInfo(id):
+    
+        print("###################################")
+        #print('contador e \n',contador)
+        print(f"[{id}] Motor contado! Total: {contador[id]['Quantidade']}")
+        print('No id', [id], operacao[id])
+        print("###################################")
+    
+    
 
 def count_motor(id):
     global global_frames, global_cropped_frames, annotated_frames
@@ -190,7 +172,7 @@ def count_motor(id):
     #model = YOLO(r'/home/sim/code/models/modelo_linha/linha_11m.pt').to('cuda')
     
     #OpenVino model
-    model = YOLO(r'linha_11m_openvino_model/')#.to('cpu')
+    model = YOLO('/home/sim/code/models/linha_11m_openvino_model/')#.to('cpu')
     
     while True:
         start = time()
@@ -200,7 +182,7 @@ def count_motor(id):
                 frame = global_cropped_frames[id]
 
             if frame is not None:
-                results = model.predict(frame, augment=True, visualize=False, verbose=False, conf=0.7, iou=0.1, imgsz=640)
+                results = model.predict(frame, augment=True, visualize=False, verbose=False, conf=0.8, iou=0.1, imgsz=640)
 
                 detected_classes = [model.names[int(cls)] for cls in results[0].boxes.cls]
                 tem_motor = any('motor' in cls.lower() for cls in detected_classes)    
@@ -230,13 +212,14 @@ def count_motor(id):
                     # Atualiza estado para indicar que o motor está presente
                     estado_anterior[id] = 1  
 
+                    
+                    
                 else:
                     # Se o motor sumiu, atualiza o estado para 0
                     estado_anterior[id] = 0  
-                
-                print(count_id())
-                if count_id is True:
-                    makeJson(id, contador, operacao)
+
+                logInfo(id)
+                makeJson(id,operacao,contador)
                     
                 with frame_lock:
                     annotated_frames[id] = results[0].plot(conf=True, labels=True, line_width=1)
@@ -250,6 +233,7 @@ def count_motor(id):
             pass
 
 
+
 def count_operation(id):
     global global_frames
     global frames_worker
@@ -258,10 +242,11 @@ def count_operation(id):
     global classes_operation, operacao, operacao_anterior, tempo_ultima_operacao
     
     #pt model
-    model = YOLO(r'linha_11m.pt')#.to('cuda')
+    model = YOLO(r'/home/sim/code/models/modelo_linha/linha_11m.pt').to('cuda')
     
     #OpenVino model
     #model = YOLO('/home/sim/code/models/linha_11m_openvino_model/')#.to('cpu')
+    #model = YOLO(r'linha_11m_openvino_model/')#.to('cuda')
     
     
     while True:
@@ -274,12 +259,14 @@ def count_operation(id):
             if frame is not None:
                 annotated_frame = frame
                 
+                
                 #OpenVino
                 #results = model.predict(frame, augment=True, task="detect", visualize=False, verbose=False, conf=0.7, iou=0.5)#,imgsz=544)
                 
                 #GPU
                 results = model.predict(frame, augment=True, visualize=False, verbose=False, conf=0.6, iou=0.1, imgsz=544)
                 
+
                 classes_operation = [model.names[int(cls)] for cls in results[0].boxes.cls]
                 annotated_frame = results[0].plot(conf=True, labels=True, line_width=1)
                 
@@ -302,6 +289,7 @@ def count_operation(id):
                     operacao[id]['Operação'] = 1
                 else:
                     operacao[id]['Operação'] = 0
+                
                 
                 """
                 # Verifica se o motor apareceu e antes não estava presente
@@ -327,8 +315,10 @@ def count_operation(id):
                     operacao_anterior[id] = 0  
                 """
                 
+                
+                #logInfo(id)
+                #print('No id', [4], operacao[4])
                 #print("###################################")
-                #print('No id', id, operacao[id])
                 
                 
                 with frame_lock:
@@ -344,8 +334,10 @@ def count_operation(id):
         # print(f'{inference_time=}')
 
 
+
+
 def generate_raw_camera(camera_id):
-    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 50]
+    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 5]
 
     while True:
         sleep(0.05)
@@ -362,7 +354,7 @@ def generate_raw_camera(camera_id):
 
 
 def generate_camera(camera_id):
-    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 50]
+    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 15]
 
     while True:
         sleep(0.05)
@@ -378,9 +370,8 @@ def generate_camera(camera_id):
                        b'Content-Type: text/plain\r\n\r\n' + b'Waiting for the frame...\r\n')
 
 
-
 def generate_cropped_frames(camera_id):
-    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 50]
+    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 15]
 
     while True:
         sleep(0.05)
@@ -394,4 +385,5 @@ def generate_cropped_frames(camera_id):
             else:
                 yield (b'--frame\r\n'
                        b'Content-Type: text/plain\r\n\r\n' + b'Waiting for the cropped frame...\r\n')
+        
 

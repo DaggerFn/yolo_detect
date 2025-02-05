@@ -237,8 +237,15 @@ def updateAPI():
 
 #from processing_video import contador, operacao
 from datetime import datetime, timedelta
+from threading import Lock
+
+frame_lock = Lock()
 
 postos = {}
+
+pending_status = {}
+last_status_time = {}
+validation_time = timedelta(seconds=3) 
 
 
 def updateDateAndTime():
@@ -247,25 +254,62 @@ def updateDateAndTime():
 
 def makeJson(id, contador, operacao):
     #contador, operacao = [0]
-    global postos
+    global postos    
     
+    posto_id = f'Posto {id + 1}'
+    current_status = operacao[id]['Operação']#(int[None])
+    quantidade_atual = contador[id]['Qtd']#,(int[None])
+    now = updateDateAndTime()
     
-    #print('Testando o ID ',classes_operation)
-    #print('Testando o ID ',contador)
-    posto_id = f'Posto {id +1}'
+    with frame_lock:
+
+        if posto_id not in postos:
+            
+            postos[posto_id] = {
+                "Data": updateDateAndTime(),
+                "Quantidade": contador[id]['Quantidade'],
+                "Status": operacao[id]['Operação'],
+            }
+            
+    '''
     
-    if posto_id not in postos:
+    with frame_lock:
         
-        postos[posto_id] = {
-            "Data": updateDateAndTime(),
-            "Status": contador[id],
-            "Quantidade": operacao[id],
-        }
-    
+        if posto_id not in postos:
+            postos[posto_id] = {
+                "Data": now,
+                "Status": current_status,
+                "Quantidade": quantidade_atual,
+            }
+            pending_status[posto_id] = current_status
+            last_status_time[posto_id] = now
+            return
+
+        stable_status = postos[posto_id]["Status"]
+        
+        if current_status == stable_status:
+            pending_status[posto_id] = stable_status
+            last_status_time[posto_id] = now
+        else:
+            if pending_status.get(posto_id) == current_status:
+                if now - last_status_time[posto_id] >= validation_time:
+                    postos[posto_id]["Data"] = now
+                    postos[posto_id]["Status"] = current_status
+                    postos[posto_id]["Quantidade"] = quantidade_atual,
+                    pending_status[posto_id] = current_status
+                    last_status_time[posto_id] = now
+            else:
+                pending_status[posto_id] = current_status
+                last_status_time[posto_id] = now
+    '''    
 
 def updateAPI():
     global postos
-    return postos
+    
+    with frame_lock:
+        return postos
+
+
 
 """"
 {
@@ -278,4 +322,6 @@ def updateAPI():
 	}
 }
 
+{'Posto 1': {'Data': '2025-02-04 13:45:17', 'Status': {'Quantidade': 1}, 'Quantidade': {'Operação': 1}}}
+{'Posto 1': {'Data': '2025-02-04 13:47:39', 'Status': 0, 'Quantidade': {'Operação': 0}}}
 """

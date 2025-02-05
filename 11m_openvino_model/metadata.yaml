@@ -1,0 +1,21 @@
+description: Ultralytics YOLO11m model trained on /content/drive/MyDrive/Colab_Notebooks/yolov10_dataset/data/custom_dataset.yaml
+author: Ultralytics
+date: '2025-02-04T13:19:18.044851'
+version: 8.3.70
+license: AGPL-3.0 License (https://ultralytics.com/license)
+docs: https://docs.ultralytics.com
+stride: 32
+task: detect
+batch: 1
+imgsz:
+- 384
+- 384
+names:
+  0: motor
+  1: hand
+args:
+  batch: 1
+  half: false
+  int8: false
+  dynamic: false
+  nms: false

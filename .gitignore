@@ -1,5 +1,4 @@
 *.txt
-*.pt
 *.jpg
 *.zip
 *.idea
@@ -14,3 +13,4 @@ __pycache__/utils.cpython-312.pyc
 *test.py
 .venv/
 .vscode/
+test/
