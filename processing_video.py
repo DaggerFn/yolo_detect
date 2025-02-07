@@ -7,6 +7,7 @@ from datetime import timedelta
 #from data_utils import infObjects, updateAPI, pass_class_api 
 from config import camera_urls, rois, roi_points_worker
 from data_utils import makeJson
+from threading import Lock
 
 # Inicializa os frames e frames anotados globais
 global_frames = [None] * len(camera_urls)
@@ -41,7 +42,7 @@ classes_operation = {}
 # Tempo de cooldown em segundos
 TEMPO_DE_COOLDOWN = 2  
 
-
+lock = Lock()
 
 tempo_ultima_detecao = {}  # Dicionário para armazenar o tempo da última detecção
 
@@ -149,10 +150,10 @@ def draw_roi(camera_id ,frame, rois, detections):
 
 
 def varReturn():
-    global contador, operacao
+    global contador,operacao
     
-    return contador, operacao
-    
+    with lock:  # Bloquear ao acessar a variável global
+        return contador, operacao
 
 def logInfo(id):
     
@@ -205,6 +206,7 @@ def count_motor(id):
                         #print("###################################")
                         #print('contador e \n',contador)
                         #print(f"[{id}] Motor contado! Total: {contador[id]['Quantidade']}")
+                        makeJson(id, varReturn)
                         
                         # Atualiza o tempo da última detecção
                         tempo_ultima_detecao[id] = tempo_atual
@@ -219,7 +221,6 @@ def count_motor(id):
                     estado_anterior[id] = 0  
 
                 logInfo(id)
-                makeJson(id,operacao,contador)
                     
                 with frame_lock:
                     annotated_frames[id] = results[0].plot(conf=True, labels=True, line_width=1)
@@ -354,7 +355,7 @@ def generate_raw_camera(camera_id):
 
 
 def generate_camera(camera_id):
-    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 15]
+    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 5]
 
     while True:
         sleep(0.05)
@@ -371,7 +372,7 @@ def generate_camera(camera_id):
 
 
 def generate_cropped_frames(camera_id):
-    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 15]
+    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 5]
 
     while True:
         sleep(0.05)

@@ -91,9 +91,8 @@ def updateAPI():
     
     with frame_lock:
         return postos
-"""
 
-'''
+
 from datetime import datetime, timedelta
 from threading import Lock, Thread
 
@@ -233,46 +232,63 @@ def updateAPI():
     with frame_lock:
         return postos
 
-'''
 
-#from processing_video import contador, operacao
+
+from processing_video import contador, classes_operation
+from datetime import datetime, timedelta
+
+def updateDateAndTime():
+    now = datetime.now()
+    return now.strftime('%Y-%m-%d %H:%M:%S')
+
+def makeJson():
+    contador, classes_operation = [id]
+    
+    print('Testando o ID ',classes_operation)
+    print('Testando o ID ',contador)
+
+
+
+
+def updateAPI(idx):
+    
+    return makeJson()
+    
+"""
+
+
 from datetime import datetime, timedelta
 from threading import Lock
+#from processing_video import varReturn #contador, operacao
 
 frame_lock = Lock()
-
 postos = {}
-
-pending_status = {}
-last_status_time = {}
-validation_time = timedelta(seconds=3) 
 
 
 def updateDateAndTime():
     now = datetime.now()
     return now.strftime('%Y-%m-%d %H:%M:%S')
 
-def makeJson(id, contador, operacao):
+
+def makeJson(id, varReturn):
     #contador, operacao = [0]
     global postos    
     
+    quantidade, status = varReturn()
+    
+    
     posto_id = f'Posto {id + 1}'
-    current_status = operacao[id]['Operação']#(int[None])
-    quantidade_atual = contador[id]['Qtd']#,(int[None])
-    now = updateDateAndTime()
     
-    with frame_lock:
-
-        if posto_id not in postos:
+    if posto_id not in postos:
+        
+        postos[posto_id] = {
+            "Data": updateDateAndTime(),
+            "Quantidade": quantidade[id]['Quantidade'],
+            "Status": status[id]['Operação'],
+        }
+                
             
-            postos[posto_id] = {
-                "Data": updateDateAndTime(),
-                "Quantidade": contador[id]['Quantidade'],
-                "Status": operacao[id]['Operação'],
-            }
-            
-    '''
-    
+    """
     with frame_lock:
         
         if posto_id not in postos:
@@ -301,27 +317,10 @@ def makeJson(id, contador, operacao):
             else:
                 pending_status[posto_id] = current_status
                 last_status_time[posto_id] = now
-    '''    
+    """
+
 
 def updateAPI():
     global postos
-    
     with frame_lock:
         return postos
-
-
-
-""""
-{
-	"Data": "2025-02-03 15:38:33",
-	"Quantidade": {
-		"Operação": 0
-	},
-	"Status": {
-		"Quantidade": 1
-	}
-}
-
-{'Posto 1': {'Data': '2025-02-04 13:45:17', 'Status': {'Quantidade': 1}, 'Quantidade': {'Operação': 1}}}
-{'Posto 1': {'Data': '2025-02-04 13:47:39', 'Status': 0, 'Quantidade': {'Operação': 0}}}
-"""

@@ -10,14 +10,13 @@ from flask_cors import CORS
 from threading import Lock, Thread
 from processing_video import imageUpdater, count_motor, count_operation, generate_raw_camera
 from processing_video import generate_camera, generate_cropped_frames  
-from processing_video import contador, operacao, varReturn
+#from processing_video import contador, operacao#, varReturn
 from config import camera_urls
 import logging
 from flask import Flask, Response, jsonify, render_template
 from flask_cors import CORS
 from data_utils import makeJson, updateAPI
 from threading import Lock
-from time import sleep
 
 
 
@@ -34,12 +33,6 @@ def getAPI():
     info = updateAPI()
     return jsonify(info)
 
-
-"""
-@app.route('/cam')
-def tracking():
-    return render_template('index.html')
-"""
 
 
 @app.route('/video<camera_id>')
@@ -66,6 +59,7 @@ def cropped_frames_feed(camera_id):
     except ValueError:
         return "Camera ID must be an integer.", 400
 
+
 """
 @app.route('/video_raw<camera_id>')
 def video_raw_camera_feed(camera_id):
@@ -80,6 +74,7 @@ def video_raw_camera_feed(camera_id):
     except ValueError:
         return "O ID da câmera deve ser um inteiro.", 400
 """
+
 
 if __name__ == '__main__':
     
@@ -111,15 +106,17 @@ if __name__ == '__main__':
         thread.start()
         threads.append(thread)
         print(threads[idx])
-    """
     
     for idx in range(len(camera_urls)):
         sleep(10)
         thread = Thread(target=updateAPI, args=())
         thread.start()
         threads.append(thread)
-        #print(updateAPI)
+    """
+    
     
     # Inicializa o servidor Flask
-    app.run(host='0.0.0.0', port=4000)
+    app.run(host='0.0.0.0', port=3000)
+    
+    
     
