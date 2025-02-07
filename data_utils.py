@@ -1,49 +1,50 @@
-from datetime import datetime
+from threading import Lock
+from time import time, sleep
+ 
 
-# Dicionário global para armazenar informações de cada posto
+'''
+quantidade = {0 :{'Quantidade': 1},
+       1 :{'Quantidade': 0},
+       }       
+
+status = {0 :{'Operacao': 0},
+       1 :{'Operacao': 1},
+       }       
+'''
+
+lock_var = Lock()
 postos = {}
-percentage = 1
-status = 1
-time = 2
-date = 2
 
 
-# Função para atualizar data e hora
-def updateDateAndTime():
-    now = datetime.now()
-    return now.strftime('%Y-%m-%d %H:%M:%S')#, now.strftime('%H:%M:%S')
-
-# Função para atualizar o status
-def updateStatus(detected_classes):
-    if 'motor' in detected_classes and 'motor' in detected_classes:
-        return "Operando"
-    else:
-        return "Parado"
-
-# Função chamada para cada câmera (ID)
-def infObjects(id, detected_classes):
+def makeJson(varReturn):
     global postos
+    
+    while True:
+        try:
+            contador, operacao = varReturn()
+            
+            for i in range(len(operacao)):
+                
+                index_posto = f'posto {i + 1}'
+                
+                if index_posto not in postos:
+                
+                    postos[index_posto] = {
+                        'Status': operacao[i]['Operação'],
+                        'Quantidade': contador[i]['Quantidade'],
+                    }
+                    print('OK in JSON')
+                print('Stoping Looking Variables')
+                
+        except:
+            print('Waitig lenght correct')        
+            sleep(15)
 
-    # Verificar se as classes 'motor' e 'hand' estão presentes
-    if 'motor' in detected_classes and 'motor' in detected_classes:
-        date = updateDateAndTime()
-        status = updateStatus(detected_classes)
-        #percentage = f"{round((id + 1) * 10.5, 2)}%"
 
-        # Atualizar ou criar entrada no dicionário de postos
-        postos[f"Posto{id + 1}"] = {
-            "Data": date,
-            "Status": status,
-        #    "ID": percentage,
-        }
-    else:
-        postos[f"Posto{id + 1}"] = {
-            "Data": None,
-            "Status": None,
-        #    "ID": None,
-        }
-        
-# Função para retornar o estado atual dos postos (JSON-like)
-def updateAPI():
+def updateAPI():    
     global postos
+    
+    #with lock_var:    
+    #    return postos
     return postos
+    
