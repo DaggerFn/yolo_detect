@@ -387,4 +387,3 @@ def generate_cropped_frames(camera_id):
                 yield (b'--frame\r\n'
                        b'Content-Type: text/plain\r\n\r\n' + b'Waiting for the cropped frame...\r\n')
         
-
