@@ -6,14 +6,13 @@ from numpy import zeros, uint8
 from datetime import timedelta
 #from data_utils import infObjects, updateAPI, pass_class_api 
 from config import camera_urls, rois, roi_points_worker
-from data_utils import makeJson
 from threading import Lock
 
 # Inicializa os frames e frames anotados globais
 global_frames = [None] * len(camera_urls)
 
 #Frame para deteção e contagem de motor
-annotated_frames = [None] * len(camera_urls)
+generate_camera_motor_motor = [None] * len(camera_urls)
 
 #Trheding Incializador
 frame_lock = Lock()
@@ -153,20 +152,23 @@ def varReturn():
     global contador,operacao
     
     with lock:  # Bloquear ao acessar a variável global
-        return contador, operacao
+        if len(contador) and len(operacao) == len(camera_urls):
+            return contador, operacao
 
 def logInfo(id):
     
-        print("###################################")
+        #print("###################################")
         #print('contador e \n',contador)
-        print(f"[{id}] Motor contado! Total: {contador[id]['Quantidade']}")
-        print('No id', [id], operacao[id])
-        print("###################################")
-    
+        #print(f"[{id}] Motor contado! Total: {contador[id]['Quantidade']}")
+        #print('No id', [id], operacao[id])
+        #print("###################################")
+        #print('Tamanho de contador',len(contador))
+        #print('Tamanho de operacação',len(operacao))
+        None
     
 
 def count_motor(id):
-    global global_frames, global_cropped_frames, annotated_frames
+    global global_frames, global_cropped_frames, generate_camera_motor_motor
     global contador, estado_anterior, tempo_ultima_detecao  
 
     #pt model
@@ -206,7 +208,6 @@ def count_motor(id):
                         #print("###################################")
                         #print('contador e \n',contador)
                         #print(f"[{id}] Motor contado! Total: {contador[id]['Quantidade']}")
-                        makeJson(id, varReturn)
                         
                         # Atualiza o tempo da última detecção
                         tempo_ultima_detecao[id] = tempo_atual
@@ -223,11 +224,11 @@ def count_motor(id):
                 logInfo(id)
                     
                 with frame_lock:
-                    annotated_frames[id] = results[0].plot(conf=True, labels=True, line_width=1)
+                    generate_camera_motor_motor[id] = results[0].plot(conf=True, labels=True, line_width=1)
 
             else:
                 with frame_lock:
-                    annotated_frames[id] = zeros((320, 480, 3), dtype=uint8)  
+                    generate_camera_motor_motor[id] = zeros((320, 480, 3), dtype=uint8)  
 
         except Exception as e:
             print(e)
@@ -287,9 +288,9 @@ def count_operation(id):
                     tempo_ultima_operacao[id] = 0  
                 
                 if tem_operacao:
-                    operacao[id]['Operação'] = 1
+                    operacao[id]['Operação'] = 'Operando'
                 else:
-                    operacao[id]['Operação'] = 0
+                    operacao[id]['Operação'] = 'Parado'
                 
                 
                 """
@@ -354,13 +355,13 @@ def generate_raw_camera(camera_id):
                        b'Content-Type: text/plain\r\n\r\n' + b'Aguardando o frame...\r\n')
 
 
-def generate_camera(camera_id):
+def generate_camera_motor(camera_id):
     encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 5]
 
     while True:
         sleep(0.05)
         with frame_lock:
-            frame = annotated_frames[camera_id]
+            frame = generate_camera_motor_motor[camera_id]
             if frame is not None:
                 _, jpeg = cv2.imencode('.jpg', frame, encode_param)
                 frame_bytes = jpeg.tobytes()

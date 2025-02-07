@@ -13,5 +13,5 @@ __pycache__/utils.cpython-312.pyc
 *test.py
 .venv/
 .vscode/
-test/
-t.py
+11m_openvino_model/
+linha_11m_openvino_model/
